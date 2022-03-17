@@ -1,0 +1,86 @@
+# Welcome to serverless. Read the docs
+# https://serverless.com/framework/docs/
+
+# Serverless.yml is the configuration the CLI
+# uses to deploy your code to your provider of choice
+
+# The `service` block is the name of the service
+service: esmd-serverless-lambdas
+
+frameworkVersion: '3'
+
+# The `provider` block defines where your service will be deployed
+provider:
+  name: aws
+  runtime: nodejs12.x
+
+  iam:
+    role: arn:aws:iam::030556409702:role/esmd_serverless_role
+
+  deploymentBucket:
+    name: esmd-aws-generic-bucket-siva # Overwrite the default deployment bucket
+    #serverSideEncryption: AES256 # when using server-side encryption
+
+# The `functions` block defines what code to deploy
+functions:
+  helloWorld:
+    handler: lambdas/hello-world/index.helloWorld
+    package:
+      individually: true
+    # package:
+    #   include:
+    #     - lambdas/hello-world/
+    #   exclude:
+    #     - lambdas/ob-file-initial-validations
+    # The `events` block defines how to trigger the handler.helloWorld code
+    events:
+      - http:
+          path: hello-world
+          method: get
+          cors: true
+
+  outboundFileInitialValidations:
+    handler: lambdas/ob-file-initial-validations/index.handler
+    runtime: nodejs12.x
+    vpc:
+      securityGroupIds:
+        - sg-03151b54033e5158d
+      subnetIds:
+        - subnet-0c3a4f372e820d41c
+        - subnet-02e013088b137a8ce
+    # Code:
+    #     Bucket: esmd-aws-generic-bucket-siva
+    #     Key: serverless/esmd-serverless-lambdas/dev/1647382987008-2022-03-15T22:23:07.008Z/outboundFileInitialValidations.zip
+    memorySize: 256 # optional, in MB, default is 1024
+    timeout: 30 # 
+    package:
+      individually: true
+    # package:
+    #   include:
+    #     - lambdas/ob-file-initial-validations
+    #   exclude:
+    #     - lambdas/hello-world/
+    events: 
+      - s3: 
+          bucket: esmd-aws-outbound-siva
+          event: s3:ObjectCreated:*
+          rules:
+            - prefix: outbound/
+          existing: true
+    environment:
+      ENVIRONMENT_NAME: dev
+      SM_PGS_DB_AUTH: dev_esmd_db_secret
+      pgs_idle_time_out: 10000
+      pgs_conn_time_out: 5000
+      max_allowed_file_size: 1073741824  # 1 GB
+      ref_sql_to_get_new_guid: select esmd_data.generate_global_unique_id(nextval('esmd_data.seq_guid_id'))
+      
+
+
+  # outboundFileInitialValidationsLambdaLogGroup:
+  #   type: AWS::Logs::LogGroup
+  #   # DeletionPolicy: 90 # ${LOG_RETENTION_POLICY}
+  #   Properties:
+  #     # LogGroupName: !Sub /aws/lambda/sc-in-frs-s3-to-dynamodb-service-tci-${deployEnv}-${version}
+  #     LogGroupName: !Sub /aws/lambda/ob-file-initial-validations-dev
+  #     # RetentionInDays: !Ref 90
