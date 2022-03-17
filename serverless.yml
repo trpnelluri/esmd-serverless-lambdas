@@ -70,10 +70,11 @@ functions:
     environment:
       ENVIRONMENT_NAME: dev
       SM_PGS_DB_AUTH: dev_esmd_db_secret
-      pgs_idle_time_out: 10000
+      pgs_idle_time_out: 90000
       pgs_conn_time_out: 5000
       max_allowed_file_size: 1073741824  # 1 GB
       ref_sql_to_get_new_guid: select esmd_data.generate_global_unique_id(nextval('esmd_data.seq_guid_id'))
+      ref_sql_for_file_dup_chk: select count(*) as trans_count from esmd_data.submsn_trans where pkg_name_title_txt=$1 and pgm_line_of_busns_id=$2
       
 
 
