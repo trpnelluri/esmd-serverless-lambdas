@@ -14,7 +14,6 @@ module.exports.handler = async function (event, context, callback) {
     let fileNameArray = fullFileName.split('/');
     const fileName = fileNameArray[1].toUpperCase();
     const fileSize = event.Records[0].s3.object.size;
-    
     console.log(`-,-,handler,fullFileName: ${fullFileName} fileName: ${fileName} fileSize: ${fileSize}`);
     context.callbackWaitsForEmptyEventLoop = false;
     try{ 
