@@ -15,7 +15,7 @@ class S3UnzipService {
         return instance;
     }
 
-    async fileUnzip (transID, bucketName, fullFileName, fileName, LOBDirectory){
+    async fileUnzip (transID, bucketName, fullFileName, LOBDirectory){
         const params = {
             Bucket: bucketName,
             Key: fullFileName,

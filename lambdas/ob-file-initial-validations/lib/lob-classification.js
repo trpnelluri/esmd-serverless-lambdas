@@ -18,48 +18,42 @@ class LOBClassificationService {
         }
         return instance;
     }
+
     async classifyLOB(transID, bucketName, fullFileName, fileName) {
         console.log(`${transID},-,classifyLOB,is invoked for fileName:${fileName}`);
         const fileIdentifiationArray = fileName.split('.')
         let lobIdetification = fileIdentifiationArray[indexOFLOB];
         console.log (`${transID},-,classifyLOB,lobIdetification: ${lobIdetification} DCF: ${DCF} ICDT: ${ICDT} EMDRPREPAY: ${EMDRPREPAY} EMDRPOSTPAY: ${EMDRPOSTPAY}`)
         let lengthOfLOBIdentify = ''
+        let LOBDirectory = ''
+
         if ( lobIdetification.indexOf(DCF) > -1 ) {
             lengthOfLOBIdentify = lobIdetification.length
             let dcfLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             const DCFLOB = dcfLob.replace('_', '.')
-            console.log (`${transID},-,classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} DCFLOB: ${DCFLOB}`)
-
-            return 'SUCCESS'
+            LOBDirectory = 'dcf/'
+            console.log (`${transID},-,classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} DCFLOB: ${DCFLOB} LOBDirectory: ${LOBDirectory}`)
 
         } else if (lobIdetification.indexOf(ICDT) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
             let icdtLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             const ICDTLOB = icdtLob.replace('_', '.')
-            console.log (`${transID},-,classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} ICDTLOB: ${ICDTLOB}`)
-
-            let s3UnzipService = S3UnzipService.getInstance();
-            let response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, fileName, 'icdt/')
-
-            console.log(`${transID},-,classifyLOB,ICDT>>response: ${JSON.stringify(response)}`)
-
-            return 'SUCCESS'
+            LOBDirectory = 'icdt/'
+            console.log (`${transID},-,classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} ICDTLOB: ${ICDTLOB} LOBDirectory: ${LOBDirectory}`)
 
         } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
             let prePayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             const EMDRPrePayLOB = prePayLob.replace('_', '.')
-            console.log (`${transID},-,classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} EMDRPrePayLOB: ${EMDRPrePayLOB}`)
-
-            return 'SUCCESS'
+            LOBDirectory = 'emdr-prepay/'
+            console.log (`${transID},-,classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} EMDRPrePayLOB: ${EMDRPrePayLOB} LOBDirectory: ${LOBDirectory}`)
 
         } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
             let postPayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             const EMDRPostPayLOB = postPayLob.replace('_', '.')
-            console.log (`${transID},-,classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} EMDRPostPayLOB: ${EMDRPostPayLOB}`)
-
-            return 'SUCCESS'
+            LOBDirectory = 'emdr-postpay/'
+            console.log (`${transID},-,classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} EMDRPostPayLOB: ${EMDRPostPayLOB} LOBDirectory: ${LOBDirectory}`)
 
         } else {
 
@@ -67,6 +61,12 @@ class LOBClassificationService {
             return 'SUCCESS'
 
         }
+
+        let s3UnzipService = S3UnzipService.getInstance();
+        let response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory)
+        console.log(`${transID},-,classifyLOB,ICDT>>response: ${JSON.stringify(response)}`)
+
+        return response
     }
 }
 
