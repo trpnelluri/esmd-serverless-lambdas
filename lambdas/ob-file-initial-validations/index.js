@@ -9,10 +9,12 @@ module.exports.handler = async function (event, context, callback) {
     console.log(`handler,Event received: ${JSON.stringify(event)}`);
     //let id = IdServiceShared.getInstance().getId();
     //console.log(`handler,Id: ${id}`);
+    const bucketName = event.Records[0].s3.bucket.name;
     const fullFileName = event.Records[0].s3.object.key;
     let fileNameArray = fullFileName.split('/');
-    const fileName = fileNameArray[1];
+    const fileName = fileNameArray[1].toUpperCase();
     const fileSize = event.Records[0].s3.object.size;
+    
     console.log(`-,-,handler,fullFileName: ${fullFileName} fileName: ${fileName} fileSize: ${fileSize}`);
     context.callbackWaitsForEmptyEventLoop = false;
     try{ 
