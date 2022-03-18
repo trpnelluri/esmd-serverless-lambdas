@@ -4,6 +4,7 @@ const PostgresSQLService = require('../../sharedLib/db/postgre-sql-service');
 const FileSizeValidationService = require('./lib/file-size-validation');
 //const IdServiceShared = require('../../sharedLib/common/id-service');
 const FileDuplicateCheckService = require('./lib/file-duplicate-chack');
+const LOBClassificationService = require('./lib/lob-classification');
 
 module.exports.handler = async function (event, context, callback) {
     console.log(`handler,Event received: ${JSON.stringify(event)}`);
@@ -17,6 +18,14 @@ module.exports.handler = async function (event, context, callback) {
     console.log(`-,-,handler,fullFileName: ${fullFileName} fileName: ${fileName} fileSize: ${fileSize}`);
     context.callbackWaitsForEmptyEventLoop = false;
     try{ 
+
+        const transID = 'ZMF0000276301EC'
+        let lobClassificationService = LOBClassificationService.getInstance();
+        let response = await lobClassificationService.classifyLOB(transID, bucketName, fullFileName, fileName)
+
+        console.log(`${transID},-,handler,response: ${response}`);
+        return callback(null, response);
+        /*
         const pool = await PostgresPoolService.getInstance().connectToPostgresDB ()
         const queryTOGetGUID = process.env.ref_sql_to_get_new_guid
         console.log(`-,-,handler,queryTOGetGUID: ${queryTOGetGUID}`)
@@ -36,6 +45,7 @@ module.exports.handler = async function (event, context, callback) {
             }
         }
         //return callback(null, response);
+        */
     } catch(err) {
         console.log(`-,-,handler,Error in catch: ${err}`);
         return callback(err, null);

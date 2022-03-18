@@ -6,6 +6,9 @@
   "directories": {
     "lib": "lib"
   },
+  "dependencies": {
+    "s3-unzip": "^0.1.13"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
