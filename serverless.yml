@@ -75,7 +75,10 @@ functions:
       max_allowed_file_size: 1073741824  # 1 GB
       ref_sql_to_get_new_guid: select esmd_data.generate_global_unique_id(nextval('esmd_data.seq_guid_id'))
       ref_sql_for_file_dup_chk: select count(*) as trans_count from esmd_data.submsn_trans where pkg_name_title_txt=$1 and pgm_line_of_busns_id=$2
-      
+      process_dcf_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-dcf-queue.fifo
+      process_icdt_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-icdt-queue.fifo
+      process_emdr_prepay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-prepay-queue.fifo
+      process_emdr_postpay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-postpay-queue.fifo
 
 
   # outboundFileInitialValidationsLambdaLogGroup:

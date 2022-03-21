@@ -15,7 +15,7 @@ class S3UnzipService {
         return instance;
     }
 
-    async fileUnzip (transID, bucketName, fullFileName, LOBDirectory){
+    async fileUnzip (transID, bucketName, fullFileName, LOBDirectory, lineOfBuss){
         const params = {
             Bucket: bucketName,
             Key: fullFileName,
@@ -30,10 +30,13 @@ class S3UnzipService {
         const promises = [];
         let num = 0;
         let listOfFiles = new Object;
+        let filesArray = [];
+    
         for await (const file of zip) {
             const entry = file;
             const fileName = entry.path;
             const type = entry.type.toLowerCase();
+            let files = new Object
             console.log(`${transID},-,fileUnzip,fileName: ${fileName} type: ${type}`)
             if (type === 'file') {
                 const uploadParams = {
@@ -41,18 +44,30 @@ class S3UnzipService {
                     Key: LOBDirectory + fileName,
                     Body: entry,
                 };
-                console.log(`${transID},-,fileUnzip,uploadParams: ${JSON.stringify(uploadParams)}`)
+                console.log(`${transID},-,fileUnzip,uploadParams Bucket: ${uploadParams.Bucket} Key: ${uploadParams.Key}`)
                 promises.push(s3.upload(uploadParams).promise());
 
-                listOfFiles[type + num] = fileName
+                files.filename = fileName
+                files.filetype = fileName.split('.').pop();
+                /*
+                // Adding filetype to message body
+                let lengthOfFile = fileName.length
+                let indexOfFileExtn = fileName.lastIndexOf(".")
+                let typeOfFile = fileName.slice(indexOfFileExtn+1, lengthOfFile) // to get the file extension
+                files.filetype = typeOfFile
+                */
+                filesArray.push(files)
                 num++;
             } else {
                 if ( type === 'directory' ) {
-                    listOfFiles[type] = fileName
+                    listOfFiles.lob = lineOfBuss
+                    listOfFiles[type] = fileName.slice(0, -1)  // To remove '/' at the end
                 }
                 entry.autodrain();
             }
         }
+
+        listOfFiles.files = filesArray
     
         await Promise.all(promises);
 
