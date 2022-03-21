@@ -48,7 +48,7 @@ class S3UnzipService {
                 promises.push(s3.upload(uploadParams).promise());
 
                 files.filename = fileName
-                files.filetype = fileName.split('.').pop();
+                files.filetype = fileName.split('.').pop(); // Assumtion will be only one '.' in file name
                 /*
                 // Adding filetype to message body
                 let lengthOfFile = fileName.length
