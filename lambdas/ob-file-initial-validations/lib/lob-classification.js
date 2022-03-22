@@ -1,6 +1,7 @@
 'use strict';
 
 const S3UnzipService = require('../../../sharedLib/aws/s3-unzip-service');
+const S3Service = require('../../../sharedLib/aws/s3-service');
 const SQSServiceShared = require('../../../sharedLib/aws/sqs-service');
 
 let instance = null;
@@ -38,7 +39,6 @@ class LOBClassificationService {
             lineOfBuss = dcfLob.replace('_', '.')
             targetQueueQRL = process.env.process_dcf_queue
             console.log (`${transID},-,classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
-
         } else if (lobIdetification.indexOf(ICDT) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
             let icdtLob = lobIdetification.slice(1,lengthOfLOBIdentify)
@@ -47,7 +47,6 @@ class LOBClassificationService {
             unZipService = true
             targetQueueQRL = process.env.process_icdt_queue
             console.log (`${transID},-,classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
-
         } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
             let prePayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
@@ -56,7 +55,6 @@ class LOBClassificationService {
             unZipService = true
             targetQueueQRL = process.env.process_emdr_prepay_queue
             console.log (`${transID},-,classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
-
         } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
             let postPayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
@@ -65,24 +63,20 @@ class LOBClassificationService {
             unZipService = true
             targetQueueQRL = process.env.process_emdr_postpay_queue
             console.log (`${transID},-,classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
-
         } else {
-
             console.log(`Received file ${fileName} does not belong to any of the LOB.`)
             return 'SUCCESS'
-
         }
 
+        let response = null;
         if ( unZipService ) {
-
             let s3UnzipService = S3UnzipService.getInstance();
-            let response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-            console.log(`${transID},-,classifyLOB,unZipServiceResponse: ${JSON.stringify(response)}`)
-
+            response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
+            console.log(`${transID},-,classifyLOB,unZipService response: ${JSON.stringify(response)}`)
         } else {
-            let s3UnzipService = S3UnzipService.getInstance();
-            let response = await s3UnzipService.copyFileToDestinationFolder(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-            console.log(`${transID},-,classifyLOB,copyFileToDestinationFolderResponse: ${JSON.stringify(response)}`)
+            let s3CopyObjService = S3Service.getInstance();
+            response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss, fileName)
+            console.log(`${transID},-,classifyLOB,copyObj response: ${JSON.stringify(response)}`)
         }
 
         if (response) {
