@@ -29,6 +29,7 @@ class LOBClassificationService {
         let LOBDirectory = ''
         let lineOfBuss = ''
         let targetQueueQRL = ''
+        let unZipService = false
 
         if ( lobIdetification.indexOf(DCF) > -1 ) {
             lengthOfLOBIdentify = lobIdetification.length
@@ -43,6 +44,7 @@ class LOBClassificationService {
             let icdtLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             LOBDirectory = 'icdt/'
             lineOfBuss = icdtLob.replace('_', '.')
+            unZipService = true
             targetQueueQRL = process.env.process_icdt_queue
             console.log (`${transID},-,classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
 
@@ -51,6 +53,7 @@ class LOBClassificationService {
             let prePayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             LOBDirectory = 'emdr-prepay/'
             lineOfBuss = prePayLob.replace('_', '.')
+            unZipService = true
             targetQueueQRL = process.env.process_emdr_prepay_queue
             console.log (`${transID},-,classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
 
@@ -59,6 +62,7 @@ class LOBClassificationService {
             let postPayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
             LOBDirectory = 'emdr-postpay/'
             lineOfBuss = postPayLob.replace('_', '.')
+            unZipService = true
             targetQueueQRL = process.env.process_emdr_postpay_queue
             console.log (`${transID},-,classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
 
@@ -69,13 +73,20 @@ class LOBClassificationService {
 
         }
 
-        let s3UnzipService = S3UnzipService.getInstance();
-        let response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-        console.log(`${transID},-,classifyLOB,response: ${JSON.stringify(response)}`)
+        if ( unZipService ) {
+
+            let s3UnzipService = S3UnzipService.getInstance();
+            let response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
+            console.log(`${transID},-,classifyLOB,unZipServiceResponse: ${JSON.stringify(response)}`)
+
+        } else {
+            let s3UnzipService = S3UnzipService.getInstance();
+            let response = await s3UnzipService.copyFileToDestinationFolder(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
+            console.log(`${transID},-,classifyLOB,copyFileToDestinationFolderResponse: ${JSON.stringify(response)}`)
+        }
 
         if (response) {
-            const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(response, targetQueueQRL );
-            console.log(`${transID},-,classifyLOB,sendMsgRes: ${JSON.stringify(sendMsgRes)}`)
+            const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(response, targetQueueQRL);
             return 'SUCCESS'
         } else {
             return 'FAILURE'

@@ -75,6 +75,33 @@ class S3UnzipService {
 
     }
 
+    async copyFileToDestinationFolder (transID, bucketName, fullFileName, fileName, LOBDirectory, lineOfBuss){
+        var copyObjParams = {
+            Bucket : bucketName, /* Another bucket working fine */ 
+            CopySource : bucketName +'/'+ LOBDirectory + fileName, //'bucketname/externall/1.txt', /* required */
+            Key : fullFileName, /* required */
+            ACL : 'public-read',
+        };
+        console.log(`${transID},-,copyFileToDestinationFolder,copyObjParams: ${JSON.stringify(copyObjParams)}`)
+        let listOfFiles = new Object;
+        let filesArray = [];
+        s3.copyObject(copyObjParams, function(err, data) {
+            if (err) {
+                console.log(`${transID},-,copyFileToDestinationFolder,ERROR: ${err.stack}`); // an error occurred
+            } else {
+                console.log(JSON.stringify(data)); //successful response
+                let files = new Object;
+                listOfFiles.lob = lineOfBuss
+                files.filename = fileName   //TBD to Add LOBDirectory
+                files.filetype = fileName.split('.').pop(); 
+                filesArray.push(files)
+                listOfFiles.files = filesArray
+                console.log(`${transID},-,copyFileToDestinationFolder,listOfFiles: ${JSON.stringify(listOfFiles)}`)
+                return listOfFiles
+            }
+        })
+    }
+
 }
 
 module.exports = S3UnzipService;
