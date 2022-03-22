@@ -16,62 +16,70 @@ class S3UnzipService {
     }
 
     async fileUnzip (transID, bucketName, fullFileName, LOBDirectory, lineOfBuss){
-        const params = {
-            Bucket: bucketName,
-            Key: fullFileName,
-        }
-        console.log(`${transID},-,fileUnzip,params: ${JSON.stringify(params)}`)
 
-        const zip = s3
-          .getObject(params)
-          .createReadStream()
-          .pipe(unzipper.Parse({ forceStream: true }));
+        try {
 
-        const promises = [];
-        let num = 0;
-        let listOfFiles = new Object;
-        let filesArray = [];
-    
-        for await (const file of zip) {
-            const entry = file;
-            const fileName = entry.path;
-            const type = entry.type.toLowerCase();
-            let files = new Object
-            console.log(`${transID},-,fileUnzip,fileName: ${fileName} type: ${type}`)
-            if (type === 'file') {
-                const uploadParams = {
-                    Bucket: bucketName,
-                    Key: LOBDirectory + fileName,
-                    Body: entry,
-                };
-                console.log(`${transID},-,fileUnzip,uploadParams Bucket: ${uploadParams.Bucket} Key: ${uploadParams.Key}`)
-                promises.push(s3.upload(uploadParams).promise());
-
-                files.filename = fileName
-                files.filetype = fileName.split('.').pop(); // Assumtion will be only one '.' in file name
-                /*
-                // Adding filetype to message body
-                let lengthOfFile = fileName.length
-                let indexOfFileExtn = fileName.lastIndexOf(".")
-                let typeOfFile = fileName.slice(indexOfFileExtn+1, lengthOfFile) // to get the file extension
-                files.filetype = typeOfFile
-                */
-                filesArray.push(files)
-                num++;
-            } else {
-                if ( type === 'directory' ) {
-                    listOfFiles.lob = lineOfBuss
-                    listOfFiles[type] = fileName.slice(0, -1)  // To remove '/' at the end
-                }
-                entry.autodrain();
+            const params = {
+                Bucket: bucketName,
+                Key: fullFileName,
             }
-        }
-
-        listOfFiles.files = filesArray
+            console.log(`${transID},-,fileUnzip,params: ${JSON.stringify(params)}`)
     
-        await Promise.all(promises);
+            const zip = s3
+              .getObject(params)
+              .createReadStream()
+              .pipe(unzipper.Parse({ forceStream: true }));
+    
+            const promises = [];
+            let num = 0;
+            let listOfFiles = new Object;
+            let filesArray = [];
+        
+            for await (const file of zip) {
+                const entry = file;
+                const fileName = entry.path;
+                const type = entry.type.toLowerCase();
+                let files = new Object
+                console.log(`${transID},-,fileUnzip,fileName: ${fileName} type: ${type}`)
+                if (type === 'file') {
+                    const uploadParams = {
+                        Bucket: bucketName,
+                        Key: LOBDirectory + fileName,
+                        Body: entry,
+                    };
+                    console.log(`${transID},-,fileUnzip,uploadParams Bucket: ${uploadParams.Bucket} Key: ${uploadParams.Key}`)
+                    promises.push(s3.upload(uploadParams).promise());
+    
+                    files.filename = fileName
+                    files.filetype = fileName.split('.').pop(); // Assumtion will be only one '.' in file name
+                    /*
+                    // Adding filetype to message body
+                    let lengthOfFile = fileName.length
+                    let indexOfFileExtn = fileName.lastIndexOf(".")
+                    let typeOfFile = fileName.slice(indexOfFileExtn+1, lengthOfFile) // to get the file extension
+                    files.filetype = typeOfFile
+                    */
+                    filesArray.push(files)
+                    num++;
+                } else {
+                    if ( type === 'directory' ) {
+                        listOfFiles.lob = lineOfBuss
+                        listOfFiles[type] = fileName.slice(0, -1)  // To remove '/' at the end
+                    }
+                    entry.autodrain();
+                }
+            }
+    
+            listOfFiles.files = filesArray
+        
+            await Promise.all(promises);
+    
+            return listOfFiles
 
-        return listOfFiles
+        } catch (err){
+            console.error(`fileUnzip,ERROR in fileUnzip catch ${JSON.stringify(err.stack)}`)
+            throw Error(`S3UnzipService.fileUnzip, Failed to get file ${fullFileName}, from ${bucketName}, Error: ${JSON.stringify(err)}`);
+        }
     }
 
 }

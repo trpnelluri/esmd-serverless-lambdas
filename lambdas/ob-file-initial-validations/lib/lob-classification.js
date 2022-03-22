@@ -3,6 +3,7 @@
 const S3UnzipService = require('../../../sharedLib/aws/s3-unzip-service');
 const S3Service = require('../../../sharedLib/aws/s3-service');
 const SQSServiceShared = require('../../../sharedLib/aws/sqs-service');
+const FileValidationService = require('./process-file-validations')
 
 let instance = null;
 
@@ -21,7 +22,7 @@ class LOBClassificationService {
         return instance;
     }
 
-    async classifyLOB(transID, bucketName, fullFileName, fileName) {
+    async classifyLOB(transID, bucketName, fullFileName, fileName, fileSize, pool) {
         console.log(`${transID},-,classifyLOB,is invoked for fileName:${fileName}`);
         const fileIdentifiationArray = fileName.split('.')
         let lobIdetification = fileIdentifiationArray[indexOFLOB];
@@ -74,18 +75,22 @@ class LOBClassificationService {
             response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
             console.log(`${transID},-,classifyLOB,unZipService response: ${JSON.stringify(response)}`)
         } else {
-            let s3CopyObjService = S3Service.getInstance();
-            response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-            console.log(`${transID},-,classifyLOB,copyObj response: ${JSON.stringify(response)}`)
+            const fileValidation = await FileValidationService.getInstance().processDCFFileValidation (fileName, fileSize, pool)
+            console.log(`fileValidation ${fileValidation}`)
+            if ( fileValidation === 'SUCCESS' ) {
+                let s3CopyObjService = S3Service.getInstance();
+                response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
+                console.log(`${transID},-,classifyLOB,copyObj response: ${JSON.stringify(response)}`)
+                if (response) {
+                    const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(response, targetQueueQRL);
+                    return 'SUCCESS'
+                } else {
+                    return 'FAILURE'
+                }
+            } else {
+                return 'FAILURE'
+            }
         }
-
-        if (response) {
-            const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(response, targetQueueQRL);
-            return 'SUCCESS'
-        } else {
-            return 'FAILURE'
-        }
-
     }
 }
 

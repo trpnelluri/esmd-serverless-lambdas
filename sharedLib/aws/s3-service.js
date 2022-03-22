@@ -3,7 +3,7 @@
 const AWS = require('aws-sdk');
 
 const s3Client = new AWS.S3();
-const EventName = 'S3_SERVICE'
+//const EventName = 'S3_SERVICE'
 let instance = null;
 
 class S3Service{
@@ -70,31 +70,36 @@ class S3Service{
 
     async copyObj (transID, bucketName, fullFileName, LOBDirectory, lineOfBuss){
 
-        let fileNameArray = fullFileName.split('/')
-        fileName = fileNameArray[1]
-        var copyObjParams = {
-            Bucket : bucketName, 
-            CopySource : bucketName + '/' + fullFileName,
-            Key : LOBDirectory + fileName
-        };
-        console.log(`${transID},-,copyObj,copyObjParams: ${JSON.stringify(copyObjParams)}`)
-        let listOfFiles = new Object;
-        let filesArray = [];
-        const copyResponse = await s3Client.copyObject(copyObjParams).promise();
-        console.log(`${transID},-,copyObj,copyResponse:  ${JSON.stringify(copyResponse)}`);
-        if (copyResponse) {
-            let files = new Object;
-            listOfFiles.lob = lineOfBuss
-            listOfFiles.directory = LOBDirectory.slice(0, -1)
-            files.filename = fileName   //TBD to Add LOBDirectory
-            files.filetype = fileName.split('.').pop(); 
-            filesArray.push(files)
-            listOfFiles.files = filesArray
-            console.log(`${transID},-,copyObj,listOfFiles: ${JSON.stringify(listOfFiles)}`)
-            return listOfFiles
-        } else {
-            console.log(`${transID},-,copyObj,ERROR`);
-            return null
+        try {
+            let fileNameArray = fullFileName.split('/')
+            let fileName = fileNameArray[1]
+            let copyObjParams = {
+                Bucket : bucketName,
+                CopySource : bucketName + '/' + fullFileName,
+                Key : LOBDirectory + fileName
+            };
+            console.log(`${transID},-,copyObj,copyObjParams: ${JSON.stringify(copyObjParams)}`)
+            let listOfFiles = new Object;
+            let filesArray = [];
+            const copyResponse = await s3Client.copyObject(copyObjParams).promise();
+            console.log(`${transID},-,copyObj,copyResponse:  ${JSON.stringify(copyResponse)}`);
+            if (copyResponse) {
+                let files = new Object;
+                listOfFiles.lob = lineOfBuss
+                listOfFiles.directory = LOBDirectory.slice(0, -1)
+                files.filename = fileName   //TBD to Add LOBDirectory
+                files.filetype = fileName.split('.').pop();
+                filesArray.push(files)
+                listOfFiles.files = filesArray
+                console.log(`${transID},-,copyObj,listOfFiles: ${JSON.stringify(listOfFiles)}`)
+                return listOfFiles
+            } else {
+                console.log(`${transID},-,copyObj,ERROR`);
+                return null
+            }
+        } catch (err) {
+            console.error(`copyObj,ERROR in copyObj catch ${JSON.stringify(err.stack)}`)
+            throw Error(`S3Service.copyObj, Failed to get file ${fullFileName}, from ${bucketName}, Error: ${JSON.stringify(err)}`);
         }
     }
 }

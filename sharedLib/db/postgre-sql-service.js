@@ -33,7 +33,7 @@ class PostgresSQLService {
             let fileAvailableFlag = false
             let client = await pool.connect();
             console.log(`${transID},-,fileAlreadyExist,query to execute: ${text} valuesToReplace: ${valuesToReplace} pool connected Successfully`);
-            let response = await client.query(text,valuesToReplace);
+            let response = await client.query(text, valuesToReplace);
             console.log(`${transID},-,fileAlreadyExist, response: ${JSON.stringify(response.rows[0])}`);
             client.release();
             if ( response.rows[0].trans_count > 0 ) {
