@@ -6,10 +6,6 @@ let instance = null;
 
 class IdService {
 
-    constructor() {
-        console.log(`IdService.constructor> Class is initialized`);
-    }
-
     static getInstance()
     {
         if(!instance){

@@ -1,5 +1,6 @@
 'use strict';
 
+const PostgresSQLService = require('../../../sharedLib/db/postgre-sql-service');
 const S3UnzipService = require('../../../sharedLib/aws/s3-unzip-service');
 const S3Service = require('../../../sharedLib/aws/s3-service');
 const SQSServiceShared = require('../../../sharedLib/aws/sqs-service');
@@ -22,67 +23,75 @@ class LOBClassificationService {
         return instance;
     }
 
-    async classifyLOB(transID, bucketName, fullFileName, fileName, fileSize, pool) {
-        console.log(`${transID},-,classifyLOB,is invoked for fileName:${fileName}`);
+    async classifyLOB(bucketName, fullFileName, fileName, fileSize, pool) {
+        let transID = '-'
+        console.log(`${transID},classifyLOB,is invoked for fileName:${fileName}`);
         const fileIdentifiationArray = fileName.split('.')
         let lobIdetification = fileIdentifiationArray[indexOFLOB];
-        console.log (`${transID},-,classifyLOB,lobIdetification: ${lobIdetification} DCF: ${DCF} ICDT: ${ICDT} EMDRPREPAY: ${EMDRPREPAY} EMDRPOSTPAY: ${EMDRPOSTPAY}`)
+        console.log (`${transID},classifyLOB,lobIdetification: ${lobIdetification} DCF: ${DCF} ICDT: ${ICDT} EMDRPREPAY: ${EMDRPREPAY} EMDRPOSTPAY: ${EMDRPOSTPAY}`)
         let lengthOfLOBIdentify = ''
         let LOBDirectory = ''
         let lineOfBuss = ''
         let targetQueueQRL = ''
         let unZipService = false
 
+        const postgresSQLService = PostgresSQLService.getInstance();
+
         if ( lobIdetification.indexOf(DCF) > -1 ) {
             lengthOfLOBIdentify = lobIdetification.length
-            let dcfLob = lobIdetification.slice(1,lengthOfLOBIdentify)
+            let dcfLob = lobIdetification.slice(1, lengthOfLOBIdentify)
             LOBDirectory = 'dcf/'
             lineOfBuss = dcfLob.replace('_', '.')
+            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
             targetQueueQRL = process.env.process_dcf_queue
-            console.log (`${transID},-,classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+            console.log (`${transID},classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(ICDT) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
-            let icdtLob = lobIdetification.slice(1,lengthOfLOBIdentify)
+            let icdtLob = lobIdetification.slice(1, lengthOfLOBIdentify)
             LOBDirectory = 'icdt/'
             lineOfBuss = icdtLob.replace('_', '.')
             unZipService = true
+            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
             targetQueueQRL = process.env.process_icdt_queue
-            console.log (`${transID},-,classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+            console.log (`${transID},classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
-            let prePayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
+            let prePayLob = lobIdetification.slice(1, lengthOfLOBIdentify)
             LOBDirectory = 'emdr-prepay/'
             lineOfBuss = prePayLob.replace('_', '.')
             unZipService = true
+            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
             targetQueueQRL = process.env.process_emdr_prepay_queue
-            console.log (`${transID},-,classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+            console.log (`${transID},classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
             lengthOfLOBIdentify = lobIdetification.length
-            let postPayLob = lobIdetification.slice(1,lengthOfLOBIdentify)
+            let postPayLob = lobIdetification.slice(1, lengthOfLOBIdentify)
             LOBDirectory = 'emdr-postpay/'
             lineOfBuss = postPayLob.replace('_', '.')
             unZipService = true
+            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
             targetQueueQRL = process.env.process_emdr_postpay_queue
-            console.log (`${transID},-,classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+            console.log (`${transID},classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else {
             console.log(`Received file ${fileName} does not belong to any of the LOB.`)
             return 'SUCCESS'
         }
 
-       let response = null;
+        let response = null;
         if ( unZipService ) {
             let s3UnzipService = S3UnzipService.getInstance();
             response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-            console.log(`${transID},-,classifyLOB,unZipService response: ${JSON.stringify(response)}`)
+            console.log(`${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
         } else {
-            const fileValidation = await FileValidationService.getInstance().processDCFFileValidation (fileName, fileSize, pool)
+            const fileValidation = await FileValidationService.getInstance().processFileValidation (transID, lineOfBuss, fileName, fileSize, postgresSQLService, pool)
             console.log(`fileValidation ${fileValidation}`)
             if ( fileValidation === 'SUCCESS' ) {
                 let s3CopyObjService = S3Service.getInstance();
                 response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-                console.log(`${transID},-,classifyLOB,copyObj response: ${JSON.stringify(response)}`)
+                console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(response)}`)
                 if (response) {
                     const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(response, targetQueueQRL);
+                    console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)}`)
                     return 'SUCCESS'
                 } else {
                     return 'FAILURE'
@@ -91,6 +100,27 @@ class LOBClassificationService {
                 return 'FAILURE'
             }
         }
+    }
+}
+
+async function getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool) {
+    try {
+        if ( lineOfBuss === '17' ) {
+            let text = process.env.ref_sql_to_get_new_guid
+            let transID = await postgresSQLService.getNewGUID(text, pool)
+            console.log(`${transID},getUnid,transID: ${transID}`)
+            return transID
+        } else {
+            let text = process.env.ref_sql_to_get_guid
+            let valuesToReplace = [fileName, lineOfBuss]
+            console.log(`-,getUnid,valuesToReplace: ${JSON.stringify(valuesToReplace)}`)
+            let transID = await postgresSQLService.getGUID(text, valuesToReplace, pool)
+            console.log(`${transID},getUnid,transID: ${transID}`)
+            return transID
+        }
+    } catch (err) {
+        console.error(`LOBClassificationService.getUnid,ERROR in getUnid catch ${JSON.stringify(err.stack)}`)
+        throw Error(`LOBClassificationService.getUnid, Failed to get guid from esmd. Error: ${JSON.stringify(err)}`);
     }
 }
 

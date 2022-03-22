@@ -3,7 +3,6 @@
 const { Pool } = require('pg');
 const SecretManagerService = require('../aws/secret-manager-service');
 
-let count = 0;
 let instance = null;
 
 class PostgresPoolService {
@@ -46,7 +45,7 @@ class PostgresPoolService {
     
         } catch(err) {
             console.error(`connectToPostgresDB,ERROR: ${err.stack}`);
-            throw new Error(`connectToPostgresDB,Error getting pool ${error.stack}`);
+            throw new Error(`connectToPostgresDB,Error getting pool ${err.stack}`);
         }
     }
 }

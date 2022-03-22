@@ -10,18 +10,17 @@ module.exports.handler = async function (event, context, callback) {
     //const fileName = fileNameArray[1].toUpperCase();
     const fileName = fileNameArray[1];
     const fileSize = event.Records[0].s3.object.size;
-    console.log(`-,-,handler,fullFileName: ${fullFileName} fileName: ${fileName} fileSize: ${fileSize}`);
+    console.log(`-,handler,fullFileName: ${fullFileName} fileName: ${fileName} fileSize: ${fileSize}`);
     context.callbackWaitsForEmptyEventLoop = false;
-    try{ 
+    try{
         const pool = await PostgresPoolService.getInstance().connectToPostgresDB ()
         const transID = 'ZMF0000276301EC'
         let lobClassificationService = LOBClassificationService.getInstance();
-        let response = await lobClassificationService.classifyLOB(transID, bucketName, fullFileName, fileName, fileSize, pool)
-        console.log(`${transID},-,handler,response: ${response}`);
+        let response = await lobClassificationService.classifyLOB(bucketName, fullFileName, fileName, fileSize, pool)
+        console.log(`${transID},handler,response: ${response}`);
         return callback(null, response);
-     
     } catch(err) {
-        console.log(`-,-,handler,Error in catch: ${err}`);
+        console.log(`-,handler,Error in catch: ${err}`);
         return callback(err, null);
     }
 };

@@ -16,33 +16,53 @@ class PostgresSQLService {
         return instance;
     }
 
-    async getGUID (queryToGenGUID, pool) {
+    async getNewGUID (queryToGenGUID, pool) {
         try {
             let client = await pool.connect();
-            console.log(`-,-,getGUID,pool connected successfully queryToGenGUID: ${queryToGenGUID}`);
+            console.log(`-,getNewGUID,pool connected successfully queryToGenGUID: ${queryToGenGUID}`);
             let response = await client.query(queryToGenGUID);
             client.release();
-            return response.rows;
+            let TransID = 'null'
+            if ( response.rowCount > 0 ) {
+                TransID = response.rows[0].generate_global_unique_id
+            }
+            return TransID;
+        } catch (err) {
+            console.log(`getNewGUID,ERROR in catch ${err.stack}`)
+        }
+    }
+
+    async getGUID (text, valuesToReplace, pool) {
+        try {
+            let client = await pool.connect();
+            console.log(`-,getGUID,query to execute: ${text} valuesToReplace: ${valuesToReplace} pool connected Successfully`);
+            let response = await client.query(text, valuesToReplace);
+            client.release();
+            let TransID = 'null'
+            if ( response.rowCount > 0 ) {
+                TransID = response.rows[0].glbl_uniq_id
+            }
+            return TransID;
         } catch (err) {
             console.log(`getGUID,ERROR in catch ${err.stack}`)
         }
     }
-
+   
     async fileAlreadyExist (transID, text, valuesToReplace, pool) {
         try {
             let fileAvailableFlag = false
             let client = await pool.connect();
-            console.log(`${transID},-,fileAlreadyExist,query to execute: ${text} valuesToReplace: ${valuesToReplace} pool connected Successfully`);
+            console.log(`${transID},fileAlreadyExist,query to execute: ${text} valuesToReplace: ${valuesToReplace} pool connected Successfully`);
             let response = await client.query(text, valuesToReplace);
-            console.log(`${transID},-,fileAlreadyExist, response: ${JSON.stringify(response.rows[0])}`);
+            console.log(`${transID},fileAlreadyExist, response: ${JSON.stringify(response.rows[0])}`);
             client.release();
             if ( response.rows[0].trans_count > 0 ) {
                 fileAvailableFlag = true
-                console.log(`${transID},-,fileAlreadyExist,fileAvailableFlag: ${fileAvailableFlag}`);
+                console.log(`${transID},fileAlreadyExist,fileAvailableFlag: ${fileAvailableFlag}`);
             }
             return fileAvailableFlag
         } catch (err) {
-            console.log(`${transID},-,fileAlreadyExist,ERROR in catch ${err.stack}`)
+            console.log(`${transID},fileAlreadyExist,ERROR in catch ${err.stack}`)
         }
     }
     

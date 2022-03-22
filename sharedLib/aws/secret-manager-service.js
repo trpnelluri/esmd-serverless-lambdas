@@ -1,8 +1,8 @@
 'use strict';
 
 const aws = require('aws-sdk');
-const NodeCache = require('node-cache');
-const SecretKeyCache = new NodeCache();
+//const NodeCache = require('node-cache');
+//const SecretKeyCache = new NodeCache();
 //Use this region config when it doesn't work in your local(from SAM it works with out this)
 const client = new aws.SecretsManager({
     region: process.env.AWS_REGION || 'us-east-1'

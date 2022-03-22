@@ -78,11 +78,11 @@ class S3Service{
                 CopySource : bucketName + '/' + fullFileName,
                 Key : LOBDirectory + fileName
             };
-            console.log(`${transID},-,copyObj,copyObjParams: ${JSON.stringify(copyObjParams)}`)
+            console.log(`${transID},copyObj,copyObjParams: ${JSON.stringify(copyObjParams)}`)
             let listOfFiles = new Object;
             let filesArray = [];
             const copyResponse = await s3Client.copyObject(copyObjParams).promise();
-            console.log(`${transID},-,copyObj,copyResponse:  ${JSON.stringify(copyResponse)}`);
+            console.log(`${transID},copyObj,copyResponse:  ${JSON.stringify(copyResponse)}`);
             if (copyResponse) {
                 let files = new Object;
                 listOfFiles.lob = lineOfBuss
@@ -91,10 +91,10 @@ class S3Service{
                 files.filetype = fileName.split('.').pop();
                 filesArray.push(files)
                 listOfFiles.files = filesArray
-                console.log(`${transID},-,copyObj,listOfFiles: ${JSON.stringify(listOfFiles)}`)
+                console.log(`${transID},copyObj,listOfFiles: ${JSON.stringify(listOfFiles)}`)
                 return listOfFiles
             } else {
-                console.log(`${transID},-,copyObj,ERROR`);
+                console.log(`${transID},copyObj,ERROR`);
                 return null
             }
         } catch (err) {

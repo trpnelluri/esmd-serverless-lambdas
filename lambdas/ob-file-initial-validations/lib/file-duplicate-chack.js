@@ -1,6 +1,5 @@
 'use strict';
 
-const PostgresSQLService = require('../../../sharedLib/db/postgre-sql-service');
 let instance = null;
 
 class FileDuplicateCheckService {
@@ -12,18 +11,17 @@ class FileDuplicateCheckService {
         return instance;
     }
 
-    async fileDuplicateCheck(transID, fileName, pool) {
+    async fileDuplicateCheck(transID, fileName, lineOfBuss, postgresSQLService, pool) {
 
         try {
-            console.log(`${transID},-,fileDuplicateCheck,is invoked for fileName:${fileName}`);
+            console.log(`${transID},fileDuplicateCheck,is invoked for fileName:${fileName}`);
             const queryToChkDuplicate = process.env.ref_sql_for_file_dup_chk
-            let valuesToReplace = [fileName, '1']
-            let postgresSQLService = PostgresSQLService.getInstance();
+            let valuesToReplace = [fileName, lineOfBuss]
             let isDuplicateFile = await postgresSQLService.fileAlreadyExist (transID, queryToChkDuplicate, valuesToReplace, pool)
-            console.log(`${transID},-,fileDuplicateCheck,isDuplicateFile: ${isDuplicateFile}`);
+            console.log(`${transID},fileDuplicateCheck,isDuplicateFile: ${isDuplicateFile}`);
             return isDuplicateFile
         } catch(err) {
-            console.error(`${transID},-,fileDuplicateCheck,ERROR in catch: ${err.stack}`);
+            console.error(`${transID},fileDuplicateCheck,ERROR in catch: ${err.stack}`);
         }
     }
 }

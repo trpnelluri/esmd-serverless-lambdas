@@ -23,12 +23,12 @@ class S3UnzipService {
                 Bucket: bucketName,
                 Key: fullFileName,
             }
-            console.log(`${transID},-,fileUnzip,params: ${JSON.stringify(params)}`)
+            console.log(`${transID},fileUnzip,params: ${JSON.stringify(params)}`)
     
             const zip = s3
-              .getObject(params)
-              .createReadStream()
-              .pipe(unzipper.Parse({ forceStream: true }));
+                .getObject(params)
+                .createReadStream()
+                .pipe(unzipper.Parse({ forceStream: true }));
     
             const promises = [];
             let num = 0;
@@ -40,7 +40,7 @@ class S3UnzipService {
                 const fileName = entry.path;
                 const type = entry.type.toLowerCase();
                 let files = new Object
-                console.log(`${transID},-,fileUnzip,fileName: ${fileName} type: ${type}`)
+                console.log(`${transID},fileUnzip,fileName: ${fileName} type: ${type}`)
                 if (type === 'file') {
                     const uploadParams = {
                         Bucket: bucketName,
@@ -69,7 +69,7 @@ class S3UnzipService {
                     entry.autodrain();
                 }
             }
-    
+            console.log(`${transID},fileUnzip,noOfFilesinZipFile: ${num}`)
             listOfFiles.files = filesArray
         
             await Promise.all(promises);

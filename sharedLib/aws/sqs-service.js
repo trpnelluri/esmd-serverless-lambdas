@@ -4,7 +4,7 @@ const AWS = require('aws-sdk');
 AWS.config.update({ region: 'us-east-1' })
 const IdServiceShared = require('../common/id-service')
 
-const EventName = 'SQS_SERVICE'
+//const EventName = 'SQS_SERVICE'
 const messageGroupId = 'esMD-OB-FILE-VALIDATION'
 let sqs = new AWS.SQS({ apiVersion: '2012-11-05' })
 
