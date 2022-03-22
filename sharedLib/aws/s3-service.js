@@ -68,52 +68,35 @@ class S3Service{
         }
     }
 
-    async copyObj (transID, bucketName, fullFileName, LOBDirectory, lineOfBuss, fileName){
+    async copyObj (transID, bucketName, fullFileName, LOBDirectory, lineOfBuss){
+
+        let fileNameArray = fullFileName.split('/')
+        fileName = fileNameArray[1]
         var copyObjParams = {
-            Bucket : bucketName, /* Another bucket working fine */ 
-            CopySource : fullFileName,
+            Bucket : bucketName, 
+            CopySource : bucketName + '/' + fullFileName,
             Key : LOBDirectory + fileName
         };
-        console.log(`${transID},-,copyFileToDestinationFolder,copyObjParams: ${JSON.stringify(copyObjParams)}`)
+        console.log(`${transID},-,copyObj,copyObjParams: ${JSON.stringify(copyObjParams)}`)
         let listOfFiles = new Object;
         let filesArray = [];
         const copyResponse = await s3Client.copyObject(copyObjParams).promise();
-        console.log(`${transID},-,copyFileToDestinationFolder,copyResponse:  ${JSON.stringify(copyResponse)}`);
+        console.log(`${transID},-,copyObj,copyResponse:  ${JSON.stringify(copyResponse)}`);
         if (copyResponse) {
             let files = new Object;
             listOfFiles.lob = lineOfBuss
+            listOfFiles.directory = LOBDirectory.slice(0, -1)
             files.filename = fileName   //TBD to Add LOBDirectory
             files.filetype = fileName.split('.').pop(); 
             filesArray.push(files)
             listOfFiles.files = filesArray
-            console.log(`${transID},-,copyFileToDestinationFolder,listOfFiles: ${JSON.stringify(listOfFiles)}`)
+            console.log(`${transID},-,copyObj,listOfFiles: ${JSON.stringify(listOfFiles)}`)
             return listOfFiles
         } else {
-            console.log(`${transID},-,copyFileToDestinationFolder,ERROR`);
+            console.log(`${transID},-,copyObj,ERROR`);
             return null
         }
     }
-
-    /*
-    //TBD to use in future
-    async write(obj, bucket, key) {
-        return this.writeText(JSON.stringify(obj), bucket, key);
-    }
-
-    async writeText(txt, bucket, key) {
-        const params = {
-            Bucket: bucket,
-            Body: txt,
-            Key: key,
-        };
-
-        try {
-            return await s3Client.putObject(params).promise();
-        } catch (err) {
-            throw Error(`S3Service.get> There was an error writing the file ${key}, for ${bucket}, Error: ${JSON.stringify(err)}`);
-        }
-    }
-    */
 }
 
 module.exports = S3Service;

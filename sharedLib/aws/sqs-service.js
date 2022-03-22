@@ -22,7 +22,7 @@ class SqsService{
     async sendMessage(msgBody, targetQueueQRL) {
         try {
             const messageDeduplicationId = IdServiceShared.getInstance().getId();
-            console.log(`sendMessage,targetQueueQRL ${targetQueueQRL} msgBody: ${json.stringify(msgBody)}  new messageDeduplicationId: ${messageDeduplicationId}`)
+            console.log(`sendMessage,targetQueueQRL ${targetQueueQRL} msgBody: ${JSON.stringify(msgBody)}  new messageDeduplicationId: ${messageDeduplicationId}`)
             const sendMsgParams = {
                 MessageBody: JSON.stringify(msgBody),
                 QueueUrl: targetQueueQRL,

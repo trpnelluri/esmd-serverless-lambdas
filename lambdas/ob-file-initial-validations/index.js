@@ -1,15 +1,9 @@
 'use strict';
 const PostgresPoolService = require('../../sharedLib/db/postgre-pool-service');
-const PostgresSQLService = require('../../sharedLib/db/postgre-sql-service');
-const FileSizeValidationService = require('./lib/file-size-validation');
-//const IdServiceShared = require('../../sharedLib/common/id-service');
-const FileDuplicateCheckService = require('./lib/file-duplicate-chack');
 const LOBClassificationService = require('./lib/lob-classification');
 
 module.exports.handler = async function (event, context, callback) {
     console.log(`handler,Event received: ${JSON.stringify(event)}`);
-    //let id = IdServiceShared.getInstance().getId();
-    //console.log(`handler,Id: ${id}`);
     const bucketName = event.Records[0].s3.bucket.name;
     const fullFileName = event.Records[0].s3.object.key;
     let fileNameArray = fullFileName.split('/');
@@ -19,6 +13,7 @@ module.exports.handler = async function (event, context, callback) {
     context.callbackWaitsForEmptyEventLoop = false;
     try{ 
 
+        const pool = await PostgresPoolService.getInstance().connectToPostgresDB ()
         const transID = 'ZMF0000276301EC'
         let lobClassificationService = LOBClassificationService.getInstance();
         let response = await lobClassificationService.classifyLOB(transID, bucketName, fullFileName, fileName)

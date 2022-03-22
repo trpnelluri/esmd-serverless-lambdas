@@ -68,14 +68,14 @@ class LOBClassificationService {
             return 'SUCCESS'
         }
 
-        let response = null;
+       let response = null;
         if ( unZipService ) {
             let s3UnzipService = S3UnzipService.getInstance();
             response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
             console.log(`${transID},-,classifyLOB,unZipService response: ${JSON.stringify(response)}`)
         } else {
             let s3CopyObjService = S3Service.getInstance();
-            response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss, fileName)
+            response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
             console.log(`${transID},-,classifyLOB,copyObj response: ${JSON.stringify(response)}`)
         }
 
