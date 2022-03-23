@@ -34,6 +34,7 @@ class LOBClassificationService {
         let lineOfBuss = ''
         let targetQueueQRL = ''
         let unZipService = false
+        let response = null;
 
         const postgresSQLService = PostgresSQLService.getInstance();
 
@@ -51,7 +52,8 @@ class LOBClassificationService {
             LOBDirectory = 'icdt/'
             lineOfBuss = icdtLob.replace('_', '.')
             unZipService = true
-            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //TBD if transID is null
             targetQueueQRL = process.env.process_icdt_queue
             console.log (`${transID},classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
@@ -60,7 +62,8 @@ class LOBClassificationService {
             LOBDirectory = 'emdr-prepay/'
             lineOfBuss = prePayLob.replace('_', '.')
             unZipService = true
-            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //TBD if transID is null
             targetQueueQRL = process.env.process_emdr_prepay_queue
             console.log (`${transID},classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
@@ -69,7 +72,8 @@ class LOBClassificationService {
             LOBDirectory = 'emdr-postpay/'
             lineOfBuss = postPayLob.replace('_', '.')
             unZipService = true
-            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //TBD if transID is null
             targetQueueQRL = process.env.process_emdr_postpay_queue
             console.log (`${transID},classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else {
@@ -77,8 +81,9 @@ class LOBClassificationService {
             return 'SUCCESS'
         }
 
-        let response = null;
         if ( unZipService ) {
+            transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+            //TBD if transID is null
             let s3UnzipService = S3UnzipService.getInstance();
             response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
             console.log(`${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
@@ -89,16 +94,17 @@ class LOBClassificationService {
                 let s3CopyObjService = S3Service.getInstance();
                 response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
                 console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(response)}`)
-                if (response) {
-                    const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(response, targetQueueQRL);
-                    console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)}`)
-                    return 'SUCCESS'
-                } else {
-                    return 'FAILURE'
-                }
             } else {
                 return 'FAILURE'
             }
+        }
+
+        if (response) {
+            const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
+            console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)}`)
+            return 'SUCCESS'
+        } else {
+            return 'FAILURE'
         }
     }
 }

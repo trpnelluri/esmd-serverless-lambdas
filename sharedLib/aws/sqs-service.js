@@ -19,22 +19,22 @@ class SqsService{
         return instance;
     }
     
-    async sendMessage(msgBody, targetQueueQRL) {
+    async sendMessage(transID, msgBody, targetQueueQRL) {
         try {
             const messageDeduplicationId = IdServiceShared.getInstance().getId();
-            console.log(`sendMessage,targetQueueQRL ${targetQueueQRL} msgBody: ${JSON.stringify(msgBody)}  new messageDeduplicationId: ${messageDeduplicationId}`)
+            console.log(`${transID},sendMessage,targetQueueQRL ${targetQueueQRL} msgBody: ${JSON.stringify(msgBody)}  new messageDeduplicationId: ${messageDeduplicationId}`)
             const sendMsgParams = {
                 MessageBody: JSON.stringify(msgBody),
                 QueueUrl: targetQueueQRL,
                 MessageGroupId: messageGroupId,
                 MessageDeduplicationId: messageDeduplicationId,
             }
-            console.log(`sendMessage,sendMsgParams: ${JSON.stringify(sendMsgParams)}`)
+            console.log(`${transID},sendMessage,sendMsgParams: ${JSON.stringify(sendMsgParams)}`)
             const messageAcknowledge = await sqs.sendMessage(sendMsgParams).promise();
-            console.log(`sendMessage,messageAcknowledge: ${JSON.stringify(messageAcknowledge)}`)
+            console.log(`${transID},sendMessage,messageAcknowledge: ${JSON.stringify(messageAcknowledge)}`)
             return messageAcknowledge;
         } catch (err) {
-            console.error(`sendMessage,ERROR in sendMessage catch ${JSON.stringify(err.stack)} `)
+            console.error(`${transID},sendMessage,ERROR in sendMessage catch ${JSON.stringify(err.stack)} `)
             throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}, Error: ${JSON.stringify(err)}`);
         }
     }
