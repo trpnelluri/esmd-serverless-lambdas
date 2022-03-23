@@ -52,8 +52,6 @@ class LOBClassificationService {
             LOBDirectory = 'icdt/'
             lineOfBuss = icdtLob.replace('_', '.')
             unZipService = true
-            //transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
-            //TBD if transID is null
             targetQueueQRL = process.env.process_icdt_queue
             console.log (`${transID},classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
@@ -62,8 +60,6 @@ class LOBClassificationService {
             LOBDirectory = 'emdr-prepay/'
             lineOfBuss = prePayLob.replace('_', '.')
             unZipService = true
-            //transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
-            //TBD if transID is null
             targetQueueQRL = process.env.process_emdr_prepay_queue
             console.log (`${transID},classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
@@ -72,8 +68,6 @@ class LOBClassificationService {
             LOBDirectory = 'emdr-postpay/'
             lineOfBuss = postPayLob.replace('_', '.')
             unZipService = true
-            //transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
-            //TBD if transID is null
             targetQueueQRL = process.env.process_emdr_postpay_queue
             console.log (`${transID},classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
         } else {
@@ -83,7 +77,6 @@ class LOBClassificationService {
 
         if ( unZipService ) {
             transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
-            //TBD if transID is null
             let s3UnzipService = S3UnzipService.getInstance();
             response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
             console.log(`${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
@@ -94,6 +87,7 @@ class LOBClassificationService {
                 let s3CopyObjService = S3Service.getInstance();
                 response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
                 console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(response)}`)
+                //TBD to insert the record into esmd table esmd_data.INBND_OTBND_DOC_RSPNS with the file object
             } else {
                 return 'FAILURE'
             }
@@ -101,9 +95,17 @@ class LOBClassificationService {
 
         if (response) {
             const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
+            if (sendMsgRes) {
+                // TBD: Audit Event to be add //NEW Audit Events
+            } else {
+                // TBD: Failure DLQ
+            }
             console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)}`)
+            //TBD do we need to do any database updates/Audit events once if the message placed into appropriate Process queues
             return 'SUCCESS'
         } else {
+            //UNZIP Fail/CopyObject fail scenario  
+            //TBD: We should generate Audit Event Exception/Email Notification. // NO need to send the message to DLQ
             return 'FAILURE'
         }
     }
