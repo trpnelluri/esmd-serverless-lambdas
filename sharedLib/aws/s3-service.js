@@ -98,8 +98,9 @@ class S3Service{
                 return null
             }
         } catch (err) {
+            //TBD Need to Add Copy Object Failure Audit Event Exception/Email Notification 
             console.error(`copyObj,ERROR in copyObj catch ${JSON.stringify(err.stack)}`)
-            throw Error(`S3Service.copyObj, Failed to get file ${fullFileName}, from ${bucketName}, Error: ${JSON.stringify(err)}`);
+            return false;
         }
     }
 }

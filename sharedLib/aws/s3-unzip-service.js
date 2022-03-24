@@ -52,13 +52,6 @@ class S3UnzipService {
     
                     files.filename = fileName
                     files.filetype = fileName.split('.').pop(); // Assumtion will be only one '.' in file name
-                    /*
-                    // Adding filetype to message body
-                    let lengthOfFile = fileName.length
-                    let indexOfFileExtn = fileName.lastIndexOf(".")
-                    let typeOfFile = fileName.slice(indexOfFileExtn+1, lengthOfFile) // to get the file extension
-                    files.filetype = typeOfFile
-                    */
                     filesArray.push(files)
                     num++;
                 } else {
@@ -77,8 +70,9 @@ class S3UnzipService {
             return listOfFiles
 
         } catch (err){
+            //TBD Need to Add Unzip Failure Audit Event Exception/Email Notification
             console.error(`fileUnzip,ERROR in fileUnzip catch ${JSON.stringify(err.stack)}`)
-            throw Error(`S3UnzipService.fileUnzip, Failed to get file ${fullFileName}, from ${bucketName}, Error: ${JSON.stringify(err)}`);
+            return false;
         }
     }
 
