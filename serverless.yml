@@ -39,8 +39,8 @@ functions:
           method: get
           cors: true
 
-  outboundFileInitialValidations:
-    handler: lambdas/ob-file-initial-validations/index.handler
+  esMDOutboundFileInitialValidations:
+    handler: lambdas/esmd-outbound-file-initial-validations/index.handler
     runtime: nodejs12.x
     vpc:
       securityGroupIds:
@@ -48,25 +48,13 @@ functions:
       subnetIds:
         - subnet-0c3a4f372e820d41c
         - subnet-02e013088b137a8ce
-    # Code:
-    #     Bucket: esmd-aws-generic-bucket-siva
-    #     Key: serverless/esmd-serverless-lambdas/dev/1647382987008-2022-03-15T22:23:07.008Z/outboundFileInitialValidations.zip
+
     memorySize: 256 # optional, in MB, default is 1024
     timeout: 30 # 
     package:
       individually: true
-    # package:
-    #   include:
-    #     - lambdas/ob-file-initial-validations
-    #   exclude:
-    #     - lambdas/hello-world/
     events: 
-      - s3: 
-          bucket: esmd-aws-outbound-siva
-          event: s3:ObjectCreated:*
-          rules:
-            - prefix: outbound/
-          existing: true
+      - sqs: arn:aws:sqs:us-east-1:030556409702:esmd-process-outbound-files 
     environment:
       ENVIRONMENT_NAME: dev
       SM_PGS_DB_AUTH: dev_esmd_db_secret
@@ -80,7 +68,9 @@ functions:
       process_icdt_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-icdt-queue.fifo
       process_emdr_prepay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-prepay-queue.fifo
       process_emdr_postpay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-postpay-queue.fifo
+      MAX_ATTEMPTS: 1
 
+  
   # outboundFileInitialValidationsLambdaLogGroup:
   #   type: AWS::Logs::LogGroup
   #   # DeletionPolicy: 90 # ${LOG_RETENTION_POLICY}
