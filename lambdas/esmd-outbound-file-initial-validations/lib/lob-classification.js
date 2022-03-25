@@ -126,7 +126,6 @@ class LOBClassificationService {
             console.error(`${EventName},classifyLOB,ERROR in getUnid catch ${JSON.stringify(err.stack)}`)
             throw Error(`${EventName}.classifyLOB,Failed to get guid from esmd. Error: ${JSON.stringify(err)}`);
         }
-        
     }
 }
 
