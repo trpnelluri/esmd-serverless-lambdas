@@ -68,6 +68,10 @@ functions:
       process_icdt_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-icdt-queue.fifo
       process_emdr_prepay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-prepay-queue.fifo
       process_emdr_postpay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-postpay-queue.fifo
+      audit_queue_url: https://sqs.us-east-1.amazonaws.com/030556409702/esmd_audit_queue.fifo
+      success_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^SS_FLATFILE_REC_GEN_SUCCESS,audit_message^ZIP FILE HAS BEEN EXTRACTED SUCCESSFULLY AND SENT THE MESSAGE TO PROCESS QUEUE FOR FURTHER PROCESS
+      unzip_fail_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^SS_FLATFILE_REC_GEN_SUCCESS,audit_message^UNZIP PROCESS FAILED
+      copyobject_fail_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^SS_FLATFILE_REC_GEN_SUCCESS,audit_message^COPY OBJECT FAILED
       MAX_ATTEMPTS: 1
 
   

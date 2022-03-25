@@ -4,15 +4,19 @@ const PostgresSQLService = require('../../../sharedLib/db/postgre-sql-service');
 const S3UnzipService = require('../../../sharedLib/aws/s3-unzip-service');
 const S3Service = require('../../../sharedLib/aws/s3-service');
 const SQSServiceShared = require('../../../sharedLib/aws/sqs-service');
-const FileValidationService = require('./process-file-validations')
+const FileDuplicateCheckService = require('./file-duplicate-chack');
+//const FileValidationService = require('./process-file-validations')
+const GenerateAuditEventService = require('../../../sharedLib/common/generate-audit-event');
 
 let instance = null;
-
+const EventName = 'GenerateAuditEventService'
 const DCF = 'L17'
 const ICDT = 'L15'
 const EMDRPREPAY = 'L1_5'
 const EMDRPOSTPAY = 'L1_6'
 const indexOFLOB = 2
+const SUCCESS = 'Success'
+const FAILURE = 'Failure'
 
 class LOBClassificationService {
 
@@ -28,10 +32,10 @@ class LOBClassificationService {
         try {
 
             let transID = '-'
-            console.log(`${transID},classifyLOB,is invoked for fileName:${fileName}`);
+            console.log(`${EventName},${transID},classifyLOB,is invoked for fileName:${fileName}`);
             const fileIdentifiationArray = fileName.split('.')
             let lobIdetification = fileIdentifiationArray[indexOFLOB];
-            console.log (`${transID},classifyLOB,lobIdetification: ${lobIdetification} DCF: ${DCF} ICDT: ${ICDT} EMDRPREPAY: ${EMDRPREPAY} EMDRPOSTPAY: ${EMDRPOSTPAY}`)
+            console.log (`${EventName},${transID},classifyLOB,lobIdetification: ${lobIdetification} DCF: ${DCF} ICDT: ${ICDT} EMDRPREPAY: ${EMDRPREPAY} EMDRPOSTPAY: ${EMDRPOSTPAY}`)
             let lengthOfLOBIdentify = ''
             let LOBDirectory = ''
             let lineOfBuss = ''
@@ -39,6 +43,11 @@ class LOBClassificationService {
             let unZipService = false
             let response = null;
 
+            const requiredEnvData = {
+                auditeventdata: process.env.success_audit_event,
+                auditqueueurl: process.env.audit_queue_url
+            }
+            
             const postgresSQLService = PostgresSQLService.getInstance();
 
             if ( lobIdetification.indexOf(DCF) > -1 ) {
@@ -48,7 +57,7 @@ class LOBClassificationService {
                 lineOfBuss = dcfLob.replace('_', '.')
                 transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
                 targetQueueQRL = process.env.process_dcf_queue
-                console.log (`${transID},classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+                console.log (`${EventName},${transID},classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else if (lobIdetification.indexOf(ICDT) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
                 let icdtLob = lobIdetification.slice(1, lengthOfLOBIdentify)
@@ -56,7 +65,7 @@ class LOBClassificationService {
                 lineOfBuss = icdtLob.replace('_', '.')
                 unZipService = true
                 targetQueueQRL = process.env.process_icdt_queue
-                console.log (`${transID},classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+                console.log (`${EventName},${transID},classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
                 let prePayLob = lobIdetification.slice(1, lengthOfLOBIdentify)
@@ -64,7 +73,7 @@ class LOBClassificationService {
                 lineOfBuss = prePayLob.replace('_', '.')
                 unZipService = true
                 targetQueueQRL = process.env.process_emdr_prepay_queue
-                console.log (`${transID},classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+                console.log (`${EventName},${transID},classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
                 let postPayLob = lobIdetification.slice(1, lengthOfLOBIdentify)
@@ -72,49 +81,49 @@ class LOBClassificationService {
                 lineOfBuss = postPayLob.replace('_', '.')
                 unZipService = true
                 targetQueueQRL = process.env.process_emdr_postpay_queue
-                console.log (`${transID},classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+                console.log (`${EventName},${transID},classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else {
-                console.log(`Received file ${fileName} does not belong to any of the LOB.`)
-                return 'SUCCESS'
+                console.log(`${EventName},${transID},classifyLOB,Received file ${fileName} does not belong to any of the LOB.`)
+                return SUCCESS
             }
 
             if ( unZipService ) {
                 transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
                 let s3UnzipService = S3UnzipService.getInstance();
                 response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-                console.log(`${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
+                console.log(`${EventName},${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
             } else {
-                const fileValidation = await FileValidationService.getInstance().processFileValidation (transID, lineOfBuss, fileName, fileSize, postgresSQLService, pool)
-                console.log(`fileValidation ${fileValidation}`)
-                if ( fileValidation === 'SUCCESS' ) {
+                const fileDupChkService = FileDuplicateCheckService.getInstance();
+                let isDuplicateFile = await fileDupChkService.fileDuplicateCheck(transID, fileName, lineOfBuss, postgresSQLService, pool)
+                console.log(`${transID},processFileValidation,isDuplicateFile: ${isDuplicateFile}`);
+                if ( ! isDuplicateFile ) {
                     let s3CopyObjService = S3Service.getInstance();
                     response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-                    console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(response)}`)
-                //TBD to insert the record into esmd table esmd_data.INBND_OTBND_DOC_RSPNS with the file object
+                    console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(response)}`)
+                    //TBD to insert the record into esmd table esmd_data.INBND_OTBND_DOC_RSPNS with the file object
                 } else {
-                    return 'FAILURE'
+                    console.log(`${EventName},${transID},classifyLOB,${fileName} file is duplicate file.`)
+                    return FAILURE
                 }
             }
 
             if (response) {
                 const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
                 if (sendMsgRes) {
-                // TBD: Audit Event to be add //NEW Audit Events
-                    console.log(`${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)}`)
-                    return 'SUCCESS'
+                    console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)} requiredEnvData: ${JSON.stringify(requiredEnvData)}`)
+                    const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, requiredEnvData)
+                    console.log(`${EventName},${transID},classifyLOB,copyObj response: ${generateAuditEvent}`)
+                    return SUCCESS
                 } else {
-                // TBD: Failure DLQ
-                    return 'FAILURE'
+                    throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
                 }
-                
             } else {
-                //Notes: NO need to send the message to DLQ
-                return 'FAILURE'
+                return FAILURE
             }
 
         } catch (err) {
-            console.error(`LOBClassificationService.classifyLOB,ERROR in getUnid catch ${JSON.stringify(err.stack)}`)
-            throw Error(`LOBClassificationService.classifyLOB, Failed to get guid from esmd. Error: ${JSON.stringify(err)}`);
+            console.error(`${EventName},classifyLOB,ERROR in getUnid catch ${JSON.stringify(err.stack)}`)
+            throw Error(`${EventName}.classifyLOB,Failed to get guid from esmd. Error: ${JSON.stringify(err)}`);
         }
         
     }
@@ -136,8 +145,8 @@ async function getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, p
             return transID
         }
     } catch (err) {
-        console.error(`LOBClassificationService.getUnid,ERROR in getUnid catch ${JSON.stringify(err.stack)}`)
-        throw Error(`LOBClassificationService.getUnid, Failed to get guid from esmd. Error: ${JSON.stringify(err)}`);
+        console.error(`${EventName},getUnid,ERROR in getUnid catch ${JSON.stringify(err.stack)}`)
+        throw Error(`${EventName}.getUnid, Failed to get guid from esmd. Error: ${JSON.stringify(err)}`);
     }
 }
 

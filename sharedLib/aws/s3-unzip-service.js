@@ -3,8 +3,10 @@
 const AWS = require('aws-sdk')
 const s3 = new AWS.S3();
 const unzipper = require('unzipper');
+const GenerateAuditEventService = require('../common/generate-audit-event');
 
 let instance = null;
+const EventName = 'S3UnzipService'
 
 class S3UnzipService {
 
@@ -23,7 +25,7 @@ class S3UnzipService {
                 Bucket: bucketName,
                 Key: fullFileName,
             }
-            console.log(`${transID},fileUnzip,params: ${JSON.stringify(params)}`)
+            console.log(`${EventName},${transID},fileUnzip,params: ${JSON.stringify(params)}`)
     
             const zip = s3
                 .getObject(params)
@@ -40,14 +42,14 @@ class S3UnzipService {
                 const fileName = entry.path;
                 const type = entry.type.toLowerCase();
                 let files = new Object
-                console.log(`${transID},fileUnzip,fileName: ${fileName} type: ${type}`)
+                console.log(`${EventName},${transID},fileUnzip,fileName: ${fileName} type: ${type}`)
                 if (type === 'file') {
                     const uploadParams = {
                         Bucket: bucketName,
                         Key: LOBDirectory + fileName,
                         Body: entry,
                     };
-                    console.log(`${transID},-,fileUnzip,uploadParams Bucket: ${uploadParams.Bucket} Key: ${uploadParams.Key}`)
+                    console.log(`${EventName},${transID},fileUnzip,uploadParams Bucket: ${uploadParams.Bucket} Key: ${uploadParams.Key}`)
                     promises.push(s3.upload(uploadParams).promise());
     
                     files.filename = fileName
@@ -62,7 +64,7 @@ class S3UnzipService {
                     entry.autodrain();
                 }
             }
-            console.log(`${transID},fileUnzip,noOfFilesinZipFile: ${num}`)
+            console.log(`${EventName},${transID},fileUnzip,noOfFilesinZipFile: ${num}`)
             listOfFiles.files = filesArray
         
             await Promise.all(promises);
@@ -70,8 +72,12 @@ class S3UnzipService {
             return listOfFiles
 
         } catch (err){
-            //TBD Need to Add Unzip Failure Audit Event Exception/Email Notification
-            console.error(`fileUnzip,ERROR in fileUnzip catch ${JSON.stringify(err.stack)}`)
+            const requiredEnvData = {
+                auditeventdata: process.env.unzip_fail_audit_event,
+                auditqueueurl: process.env.audit_queue_url
+            }
+            const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, requiredEnvData)
+            console.error(`${EventName},${transID},fileUnzip,generateAuditEvent: ${generateAuditEvent}, ERROR in fileUnzip catch ${JSON.stringify(err.stack)}`)
             return false;
         }
     }

@@ -4,6 +4,8 @@ const FileSizeValidationService = require('./file-size-validation');
 const FileDuplicateCheckService = require('./file-duplicate-chack');
 
 let instance = null;
+const SUCCESS = 'Success'
+const FAILURE = 'Failure'
 
 class FileValidationService {
 
@@ -24,14 +26,14 @@ class FileValidationService {
                 let isDuplicateFile = await fileDupChkService.fileDuplicateCheck(transID, fileName, lineOfBuss, postgresSQLService, pool)
                 console.log(`${transID},processFileValidation,isDuplicateFile: ${isDuplicateFile}`);
                 if ( ! isDuplicateFile ) {
-                    return 'SUCCESS'
+                    return SUCCESS
                 } else {
                     //Duplicat file Audit event
-                    return 'FAILURE'
+                    return FAILURE
                 }
             } else {
                 //Invalid fileSize Audit event
-                return 'FAILURE'
+                return FAILURE
             }
         } catch(err){
             console.error(`processFileValidation,ERROR in processFileValidation catch ${JSON.stringify(err.stack)}`)
