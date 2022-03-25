@@ -111,6 +111,7 @@ class LOBClassificationService {
                 const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
                 if (sendMsgRes) {
                     console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)} requiredEnvData: ${JSON.stringify(requiredEnvData)}`)
+                    //TBD: Need to classify unzip/copyObject
                     const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, requiredEnvData)
                     console.log(`${EventName},${transID},classifyLOB,copyObj response: ${generateAuditEvent}`)
                     return SUCCESS
