@@ -70,7 +70,6 @@ class PostgresSQLService {
     }
 
     async insertData (transID, text, pool) {
-        
         console.log(`${EventName},${transID},insertData,insert Data query to execute: ${text} `);
         try {
             const client = await pool.connect();

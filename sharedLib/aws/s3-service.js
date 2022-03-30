@@ -94,7 +94,7 @@ class S3Service{
                 return listOfFiles
             } else {
                 console.log(`${EventName},${transID},copyObj,ERROR`);
-                return null
+                return false
             }
         } catch (err) {
             console.error(`${EventName},${transID},fileUnzip,ERROR in copyObj catch ${JSON.stringify(err.stack)}`)

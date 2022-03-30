@@ -35,11 +35,15 @@ class ProcessDCFFileService {
                     if ( insertQuery ) {
                         const resStatus = await postgresSQLService.insertData (transID, insertQuery, pool)
                         console.log(`${EventName},${transID},processDCFFile,resStatus: ${resStatus}`);
-                        let msgResponseStatus = await _processResponse(transID, dcfMsgData, targetQueueQRL, resStatus)
-                        return msgResponseStatus
+                        if ( resStatus === SUCCESS ) {
+                            let msgResponseStatus = await _processResponse(transID, dcfMsgData, targetQueueQRL, resStatus)
+                            return msgResponseStatus
+                        } else {
+                            throw new Error('processDCFFile, insertData Failed');
+                        }
                     } else {
-                        let msgResponseStatus = await _processResponse(transID, dcfMsgData, targetQueueQRL, FAILURE)
-                        return msgResponseStatus
+                        console.log(`${EventName},${transID},processDCFFile, insertQuery Failed`)
+                        return FAILURE
                     }
                 } else {
                     let msgResponseStatus = await _processResponse(transID, dcfMsgData, targetQueueQRL, FAILURE)

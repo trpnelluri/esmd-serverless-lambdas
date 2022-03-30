@@ -35,7 +35,7 @@ class SqsService{
             return messageAcknowledge;
         } catch (err) {
             console.error(`${transID},sendMessage,ERROR in sendMessage catch ${JSON.stringify(err.stack)} `)
-            throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}, Error: ${JSON.stringify(err)}`);
+            throw new Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}, Error: ${JSON.stringify(err)}`);
         }
     }
 }

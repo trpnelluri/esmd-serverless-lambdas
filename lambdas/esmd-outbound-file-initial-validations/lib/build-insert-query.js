@@ -27,7 +27,7 @@ class BuildInsertQueryService {
             let values = '';
             let dbColumnNames = '';
             columnsObj.forEach((element) => {
-                console.log(`buildInsertQuery,columnsObj element: ${element}`);
+                console.log(`${EventName},${transID},buildInsertQuery,columnsObj element: ${element}`);
                 const dbAttribute = element.trim();
                 const dbAttrArray = dbAttribute.split('^');
                 if (dbColumnNames !== '') {
@@ -53,13 +53,14 @@ class BuildInsertQueryService {
 
             });
 
-            console.log(`buildInsertQuary,dbColumnNames: ${dbColumnNames} values: ${values}`);
+            console.log(`${EventName},${transID},buildInsertQuery,dbColumnNames: ${dbColumnNames} values: ${values}`);
             const insertQuery = `INSERT INTO ${tableName}(${dbColumnNames}) VALUES(${values})`;
-            console.log(`buildInsertQuary,insertQuery: ${insertQuery}`);
+            console.log(`${EventName},${transID},buildInsertQuery,insertQuery: ${insertQuery}`);
             return insertQuery
 
         } catch(err) {
             console.error(`${EventName},${transID},buildInsertQuery,ERROR in catch: ${err.stack}`);
+            throw new Error(`buildInsertQuery, ERROR: ${err.stack}`);
         }
     }
 }

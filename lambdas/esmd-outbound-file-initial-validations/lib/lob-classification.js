@@ -55,7 +55,6 @@ class LOBClassificationService {
                 transID = await _getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
                 targetQueueQRL = process.env.process_dcf_queue
                 console.log (`${EventName},${transID},classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
-
             } else if (lobIdetification.indexOf(ICDT) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
                 let icdtLob = lobIdetification.slice(1, lengthOfLOBIdentify)
@@ -90,7 +89,6 @@ class LOBClassificationService {
                 let s3UnzipService = S3UnzipService.getInstance();
                 response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
                 console.log(`${EventName},${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
-
                 if (response) {
                     const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
                     if (sendMsgRes) {
@@ -99,16 +97,18 @@ class LOBClassificationService {
                         const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                         console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
                         return SUCCESS
-                    } else {
-                        reqEnvAuditData.auditeventdata = process.env.failure_audit_event
-                        const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
-                        console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
-                        throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
                     }
+                    // } else {
+                    // reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+                    // const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
+                    // console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
+                    // throw new Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
+                    // }
                 } else {
                     reqEnvAuditData.auditeventdata = process.env.failure_audit_event
                     const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                     console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
+                    //TBD:Email Notification is Required?
                     return FAILURE
                 }
 
