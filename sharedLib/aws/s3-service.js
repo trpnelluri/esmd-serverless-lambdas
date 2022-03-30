@@ -1,7 +1,6 @@
 'use strict';
 
 const AWS = require('aws-sdk');
-const GenerateAuditEventService = require('../common/generate-audit-event');
 const s3Client = new AWS.S3();
 const EventName = 'S3Service'
 let instance = null;
@@ -98,12 +97,7 @@ class S3Service{
                 return null
             }
         } catch (err) {
-            const requiredEnvData = {
-                auditeventdata: process.env.copyobject_fail_audit_event,
-                auditqueueurl: process.env.audit_queue_url
-            }
-            const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, requiredEnvData)
-            console.error(`${EventName},${transID},fileUnzip,generateAuditEvent: ${generateAuditEvent} ERROR in copyObj catch ${JSON.stringify(err.stack)}`)
+            console.error(`${EventName},${transID},fileUnzip,ERROR in copyObj catch ${JSON.stringify(err.stack)}`)
             return false;
         }
     }

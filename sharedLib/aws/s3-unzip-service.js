@@ -3,7 +3,6 @@
 const AWS = require('aws-sdk')
 const s3 = new AWS.S3();
 const unzipper = require('unzipper');
-const GenerateAuditEventService = require('../common/generate-audit-event');
 
 let instance = null;
 const EventName = 'S3UnzipService'
@@ -72,12 +71,7 @@ class S3UnzipService {
             return listOfFiles
 
         } catch (err){
-            const requiredEnvData = {
-                auditeventdata: process.env.unzip_fail_audit_event,
-                auditqueueurl: process.env.audit_queue_url
-            }
-            const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, requiredEnvData)
-            console.error(`${EventName},${transID},fileUnzip,generateAuditEvent: ${generateAuditEvent}, ERROR in fileUnzip catch ${JSON.stringify(err.stack)}`)
+            console.error(`${EventName},${transID},fileUnzip,ERROR in fileUnzip catch ${JSON.stringify(err.stack)}`)
             return false;
         }
     }

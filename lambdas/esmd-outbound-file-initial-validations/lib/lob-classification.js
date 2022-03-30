@@ -2,11 +2,9 @@
 
 const PostgresSQLService = require('../../../sharedLib/db/postgre-sql-service');
 const S3UnzipService = require('../../../sharedLib/aws/s3-unzip-service');
-const S3Service = require('../../../sharedLib/aws/s3-service');
 const SQSServiceShared = require('../../../sharedLib/aws/sqs-service');
-const FileDuplicateCheckService = require('./file-duplicate-chack');
-//const FileValidationService = require('./process-file-validations')
 const GenerateAuditEventService = require('../../../sharedLib/common/generate-audit-event');
+const ProcessDCFFileService = require('./process-dcf-file');
 
 let instance = null;
 const EventName = 'GenerateAuditEventService'
@@ -43,8 +41,7 @@ class LOBClassificationService {
             let unZipService = false
             let response = null;
 
-            const requiredEnvData = {
-                auditeventdata: process.env.success_audit_event,
+            let reqEnvAuditData = {
                 auditqueueurl: process.env.audit_queue_url
             }
             
@@ -55,9 +52,10 @@ class LOBClassificationService {
                 let dcfLob = lobIdetification.slice(1, lengthOfLOBIdentify)
                 LOBDirectory = 'dcf/'
                 lineOfBuss = dcfLob.replace('_', '.')
-                transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+                transID = await _getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
                 targetQueueQRL = process.env.process_dcf_queue
                 console.log (`${EventName},${transID},classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
+
             } else if (lobIdetification.indexOf(ICDT) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
                 let icdtLob = lobIdetification.slice(1, lengthOfLOBIdentify)
@@ -88,38 +86,37 @@ class LOBClassificationService {
             }
 
             if ( unZipService ) {
-                transID = await getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
+                transID = await _getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
                 let s3UnzipService = S3UnzipService.getInstance();
                 response = await s3UnzipService.fileUnzip(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
                 console.log(`${EventName},${transID},classifyLOB,unZipService response: ${JSON.stringify(response)}`)
-            } else {
-                const fileDupChkService = FileDuplicateCheckService.getInstance();
-                let isDuplicateFile = await fileDupChkService.fileDuplicateCheck(transID, fileName, lineOfBuss, postgresSQLService, pool)
-                console.log(`${transID},processFileValidation,isDuplicateFile: ${isDuplicateFile}`);
-                if ( ! isDuplicateFile ) {
-                    let s3CopyObjService = S3Service.getInstance();
-                    response = await s3CopyObjService.copyObj(transID, bucketName, fullFileName, LOBDirectory, lineOfBuss)
-                    console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(response)}`)
-                    //TBD to insert the record into esmd table esmd_data.INBND_OTBND_DOC_RSPNS with the file object
+
+                if (response) {
+                    const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
+                    if (sendMsgRes) {
+                        console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)} reqEnvAuditData: ${JSON.stringify(reqEnvAuditData)}`)
+                        reqEnvAuditData.auditeventdata = process.env.success_audit_event
+                        const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
+                        console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
+                        return SUCCESS
+                    } else {
+                        reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+                        const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
+                        console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
+                        throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
+                    }
                 } else {
-                    console.log(`${EventName},${transID},classifyLOB,${fileName} file is duplicate file.`)
+                    reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+                    const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
+                    console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
                     return FAILURE
                 }
-            }
 
-            if (response) {
-                const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
-                if (sendMsgRes) {
-                    console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)} requiredEnvData: ${JSON.stringify(requiredEnvData)}`)
-                    //TBD: Need to classify unzip/copyObject
-                    const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, requiredEnvData)
-                    console.log(`${EventName},${transID},classifyLOB,copyObj response: ${generateAuditEvent}`)
-                    return SUCCESS
-                } else {
-                    throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
-                }
             } else {
-                return FAILURE
+                const processDCFFileService = ProcessDCFFileService.getInstance();
+                const dcfFileRes = await processDCFFileService.processDCFFile(transID, bucketName, fullFileName, fileName, LOBDirectory, lineOfBuss, targetQueueQRL, postgresSQLService, pool)
+                console.log(`${EventName},${transID},classifyLOB,dcfFileRes: ${dcfFileRes}`)
+                return dcfFileRes
             }
 
         } catch (err) {
@@ -129,7 +126,7 @@ class LOBClassificationService {
     }
 }
 
-async function getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool) {
+async function _getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool) {
     try {
         if ( lineOfBuss === '17' ) {
             let text = process.env.ref_sql_to_get_new_guid
