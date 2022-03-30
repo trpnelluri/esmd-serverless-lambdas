@@ -33,7 +33,7 @@ class DupEmailNotificationService {
             notificationObj.email_alert_notification_type = notificationType
             notificationObj.environment_type = process.env.environment
             notificationObj.submission_timestamp = new Date();
-            files.key = 'filename'
+            files.key = 'fileName'
             files.value = fileName
             emailPlaceHolderArray.push(files)
             notificationObj.email_place_holder_list = emailPlaceHolderArray
