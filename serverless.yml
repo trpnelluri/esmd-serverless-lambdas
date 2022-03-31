@@ -53,7 +53,7 @@ provider:
 # The `functions` block defines what code to deploy
 functions:
   esMDOutboundFileInitialValidations:
-    handler: lambdas/esmd-outbound-file-initial-validations/index.handler
+    handler: outbound-file-initial-validations/index.handler
     runtime: nodejs12.x
     vpc:
       securityGroupIds:

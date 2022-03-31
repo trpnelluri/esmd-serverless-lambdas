@@ -1,6 +1,6 @@
 'use strict'
 
-const SQSServiceShared = require('../../../sharedLib/aws/sqs-service');
+const SQSServiceShared = require('../../sharedLib/aws/sqs-service');
 
 const EventName = 'DupEmailNotificationService'
 const SUCCESS = 'Success'
