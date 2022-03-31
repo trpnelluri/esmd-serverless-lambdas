@@ -43,6 +43,7 @@ class ProcessDCFFileService {
                         }
                     } else {
                         console.log(`${EventName},${transID},processDCFFile, insertQuery Failed`)
+                        //let msgResponseStatus = await _processResponse(transID, dcfMsgData, targetQueueQRL, FAILURE)
                         return FAILURE
                     }
                 } else {
@@ -89,7 +90,7 @@ async function _processResponse (transID, response, targetQueueQRL, status) {
             return FAILURE
         }
     } catch(err) {
-        console.error(`${transID},fileDuplicateCheck,ERROR in catch: ${err.stack}`);
+        console.error(`${transID},_processResponse,ERROR in catch: ${err.stack}`);
         throw Error(`${EventName},${transID},_processResponse,Failed to Build Insert Query.}`);
     }
 }

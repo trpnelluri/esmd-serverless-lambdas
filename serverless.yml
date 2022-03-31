@@ -23,22 +23,6 @@ provider:
 
 # The `functions` block defines what code to deploy
 functions:
-  helloWorld:
-    handler: lambdas/hello-world/index.helloWorld
-    package:
-      individually: true
-    # package:
-    #   include:
-    #     - lambdas/hello-world/
-    #   exclude:
-    #     - lambdas/ob-file-initial-validations
-    # The `events` block defines how to trigger the handler.helloWorld code
-    events:
-      - http:
-          path: hello-world
-          method: get
-          cors: true
-
   esMDOutboundFileInitialValidations:
     handler: lambdas/esmd-outbound-file-initial-validations/index.handler
     runtime: nodejs12.x
@@ -50,7 +34,9 @@ functions:
         - subnet-02e013088b137a8ce
 
     memorySize: 256 # optional, in MB, default is 1024
-    timeout: 30 # 
+    timeout: 10 # 
+    provisionedConcurrency: 3 # optional, Count of provisioned lambda instances
+    reservedConcurrency: 5 # optional, reserved concurrency limit for this function. By default, AWS uses account concurrency limit
     package:
       individually: true
     events: 
