@@ -8,7 +8,7 @@ const FAILURE = 'Failure'
 
 let instance = null;
 
-const notification_SQS_url = process.env.notification_queue_url
+const notification_SQS_url = process.env.NOTIFICATION_QUEUE_URL
 
 class DupEmailNotificationService {
 
@@ -23,7 +23,7 @@ class DupEmailNotificationService {
     async sendDupEmailNotification ( transID, fileName ) {
 
         try {
-            const notificationType = process.env.dup_pcg_notification.toUpperCase()
+            const notificationType = process.env.DUP_PCG_NOTIFICATION.toUpperCase()
 
             let notificationObj = new Object;
             let emailPlaceHolderArray = [];
@@ -31,7 +31,7 @@ class DupEmailNotificationService {
             notificationObj.guid = transID
             notificationObj.request_type = 'OUTBOUND'
             notificationObj.email_alert_notification_type = notificationType
-            notificationObj.environment_type = process.env.environment
+            notificationObj.environment_type = process.env.ENVIRONMENT_NAME
             notificationObj.submission_timestamp = new Date();
             files.key = 'fileName'
             files.value = fileName

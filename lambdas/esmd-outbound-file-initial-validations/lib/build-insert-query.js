@@ -20,8 +20,8 @@ class BuildInsertQueryService {
             colDataObj.glbl_uniq_id = transID
             colDataObj.pkg_name_title_txt = fileName
             colDataObj.pgm_line_of_busns_id = lineOfBuss
-            const tableName = process.env.dcf_rec_insert_tbl_name
-            const columns = process.env.dcf_rec_insert_cols
+            const tableName = process.env.DCF_REC_INSERT_TBL_NAME
+            const columns = process.env.DCF_REC_INSERT_COLS
             const columnsObj = columns.split(',');
             console.log(`${EventName},${transID},buildInsertQuery,columnsObj: ${columnsObj.length}`);
             let values = '';

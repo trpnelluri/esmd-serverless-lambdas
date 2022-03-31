@@ -65,25 +65,25 @@ class ProcessDCFFileService {
 async function _processResponse (transID, response, targetQueueQRL, status) {
     try {
         let reqEnvAuditData = {
-            auditqueueurl: process.env.audit_queue_url
+            auditqueueurl: process.env.AUDIT_QUEUE_URL
         }
         if ( status === SUCCESS ) {
             const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
             if (sendMsgRes) {
-                reqEnvAuditData.auditeventdata = process.env.success_audit_event
+                reqEnvAuditData.auditeventdata = process.env.SUCCESS_AUDIT_EVENT
                 console.log(`${EventName},${transID},_processResponse,sendMsgRes response: ${JSON.stringify(sendMsgRes)} reqEnvAuditData: ${JSON.stringify(reqEnvAuditData)}`)
                 let generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                 console.log(`${EventName},${transID},_processResponse,generateAuditEvent response: ${generateAuditEvent}`)
                 return SUCCESS
             } else {
-                reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+                reqEnvAuditData.auditeventdata = process.env.FAILURE_AUDIT_EVENT
                 console.log(`${EventName},${transID},_processResponse,sendMsgRes Data: ${JSON.stringify(sendMsgRes)} reqEnvAuditData: ${JSON.stringify(reqEnvAuditData)}`)
                 let generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                 console.log(`${EventName},${transID},_processResponse,generateAuditEvent response: ${generateAuditEvent}`)
                 throw Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
             }
         } else {
-            reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+            reqEnvAuditData.auditeventdata = process.env.FAILURE_AUDIT_EVENT
             console.log(`${EventName},${transID},_processResponse,status: ${status} reqEnvAuditData: ${JSON.stringify(reqEnvAuditData)}`)
             let generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
             console.log(`${EventName},${transID},_processResponse,generateAuditEvent response: ${generateAuditEvent}`)

@@ -15,7 +15,7 @@ class FileDuplicateCheckService {
 
         try {
             console.log(`${transID},fileDuplicateCheck,is invoked for fileName:${fileName}`);
-            const queryToChkDuplicate = process.env.ref_sql_for_file_dup_chk
+            const queryToChkDuplicate = process.env.REF_SQL_FOR_FILE_DUP_CHK
             let valuesToReplace = [fileName, lineOfBuss]
             let isDuplicateFile = await postgresSQLService.fileAlreadyExist (transID, queryToChkDuplicate, valuesToReplace, pool)
             console.log(`${transID},fileDuplicateCheck,isDuplicateFile: ${isDuplicateFile}`);

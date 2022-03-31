@@ -25,8 +25,8 @@ class PostgresPoolService {
             let secretManagerService = SecretManagerService.getInstance();
             const resScrectManger = await secretManagerService.getSecretValue(params)
             const dbConnDetails = JSON.parse(resScrectManger)
-            const connTimeout = process.env.pgs_conn_time_out;
-            const idleTimeout = process.env.pgs_idle_time_out;
+            const connTimeout = process.env.PGS_CONN_TIME_OUT;
+            const idleTimeout = process.env.PGS_IDLE_TIME_OUT;
             
             console.log(`dbConnDetails: ${JSON.stringify(dbConnDetails)} connTimeout: ${connTimeout} idleTimeout: ${idleTimeout}`)
     

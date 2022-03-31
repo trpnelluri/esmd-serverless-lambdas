@@ -1,7 +1,7 @@
 'use strict';
 
 let instance = null;
-const fileSize_1GB = process.env.max_allowed_file_size
+const fileSize_1GB = process.env.MAX_ALLOWED_FILE_SIZE
 
 class FileSizeValidationService {
 

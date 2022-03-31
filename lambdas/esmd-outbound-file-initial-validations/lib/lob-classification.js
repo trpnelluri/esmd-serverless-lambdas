@@ -42,7 +42,7 @@ class LOBClassificationService {
             let response = null;
 
             let reqEnvAuditData = {
-                auditqueueurl: process.env.audit_queue_url
+                auditqueueurl: process.env.AUDIT_QUEUE_URL
             }
             
             const postgresSQLService = PostgresSQLService.getInstance();
@@ -53,7 +53,7 @@ class LOBClassificationService {
                 LOBDirectory = 'dcf/'
                 lineOfBuss = dcfLob.replace('_', '.')
                 transID = await _getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool)
-                targetQueueQRL = process.env.process_dcf_queue
+                targetQueueQRL = process.env.PROCESS_DCF_QUEUE
                 console.log (`${EventName},${transID},classifyLOB,DCF>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} dcfLob: ${dcfLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else if (lobIdetification.indexOf(ICDT) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
@@ -61,7 +61,7 @@ class LOBClassificationService {
                 LOBDirectory = 'icdt/'
                 lineOfBuss = icdtLob.replace('_', '.')
                 unZipService = true
-                targetQueueQRL = process.env.process_icdt_queue
+                targetQueueQRL = process.env.PROCESS_ICDT_QUEUE
                 console.log (`${EventName},${transID},classifyLOB,ICDT>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} icdtLob: ${icdtLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else if (lobIdetification.indexOf(EMDRPREPAY) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
@@ -69,7 +69,7 @@ class LOBClassificationService {
                 LOBDirectory = 'emdr-prepay/'
                 lineOfBuss = prePayLob.replace('_', '.')
                 unZipService = true
-                targetQueueQRL = process.env.process_emdr_prepay_queue
+                targetQueueQRL = process.env.PROCESS_EMDR_PREPAY_QUEUE
                 console.log (`${EventName},${transID},classifyLOB,EMDRPREPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} prePayLob: ${prePayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else if (lobIdetification.indexOf(EMDRPOSTPAY) > -1) {
                 lengthOfLOBIdentify = lobIdetification.length
@@ -77,7 +77,7 @@ class LOBClassificationService {
                 LOBDirectory = 'emdr-postpay/'
                 lineOfBuss = postPayLob.replace('_', '.')
                 unZipService = true
-                targetQueueQRL = process.env.process_emdr_postpay_queue
+                targetQueueQRL = process.env.PROCESS_EMDR_POSTPAY_QUEUE
                 console.log (`${EventName},${transID},classifyLOB,EMDRPOSTPAY>>lengthOfLOBIdentify: ${lengthOfLOBIdentify} postPayLob: ${postPayLob} lineOfBuss: ${lineOfBuss} LOBDirectory: ${LOBDirectory} targetQueueQRL: ${targetQueueQRL}`)
             } else {
                 console.log(`${EventName},${transID},classifyLOB,Received file ${fileName} does not belong to any of the LOB.`)
@@ -93,19 +93,19 @@ class LOBClassificationService {
                     const sendMsgRes = await SQSServiceShared.getInstance().sendMessage(transID, response, targetQueueQRL);
                     if (sendMsgRes) {
                         console.log(`${EventName},${transID},classifyLOB,copyObj response: ${JSON.stringify(sendMsgRes)} reqEnvAuditData: ${JSON.stringify(reqEnvAuditData)}`)
-                        reqEnvAuditData.auditeventdata = process.env.success_audit_event
+                        reqEnvAuditData.auditeventdata = process.env.SUCCESS_AUDIT_EVENT
                         const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                         console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
                         return SUCCESS
                     }
                     // } else {
-                    // reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+                    // reqEnvAuditData.auditeventdata = process.env.FAILURE_AUDIT_EVENT
                     // const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                     // console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
                     // throw new Error(`SqsService,Failed to sendMessage to Queue ${targetQueueQRL}`);
                     // }
                 } else {
-                    reqEnvAuditData.auditeventdata = process.env.failure_audit_event
+                    reqEnvAuditData.auditeventdata = process.env.FAILURE_AUDIT_EVENT
                     const generateAuditEvent = await GenerateAuditEventService.getInstance().generateAuditEvent(transID, reqEnvAuditData)
                     console.log(`${EventName},${transID},classifyLOB,generateAuditEvent response: ${generateAuditEvent}`)
                     //TBD:Email Notification is Required?
@@ -129,12 +129,12 @@ class LOBClassificationService {
 async function _getUnid(fileName, lineOfBuss, LOBDirectory, postgresSQLService, pool) {
     try {
         if ( lineOfBuss === '17' ) {
-            let text = process.env.ref_sql_to_get_new_guid
+            let text = process.env.REF_SQL_TO_GET_NEW_GUID
             let transID = await postgresSQLService.getNewGUID(text, pool)
             console.log(`${transID},getUnid,transID: ${transID}`)
             return transID
         } else {
-            let text = process.env.ref_sql_to_get_guid
+            let text = process.env.REF_SQL_TO_GET_GUID
             let valuesToReplace = [fileName, lineOfBuss]
             console.log(`-,getUnid,valuesToReplace: ${JSON.stringify(valuesToReplace)}`)
             let transID = await postgresSQLService.getGUID(text, valuesToReplace, pool)

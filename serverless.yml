@@ -9,6 +9,35 @@ service: esmd-serverless-lambdas
 
 frameworkVersion: '3'
 
+params:
+  default:
+    domain: ${sls:stage}.preview.myapp.com
+  dev:
+    sm_pgs_db_auth: dev_esmd_db_secret
+    pgs_idle_time_out: 90000
+    pgs_conn_time_out: 5000
+    max_allowed_file_size: 1073741824  # 1 GB
+    ref_sql_to_get_new_guid: select esmd_data.generate_global_unique_id(nextval('esmd_data.seq_guid_id'))
+    ref_sql_to_get_guid: select glbl_uniq_id from esmd_data.submsn_trans where pkg_name_title_txt=$1 and pgm_line_of_busns_id=$2
+    ref_sql_for_file_dup_chk: select count(*) as trans_count from esmd_data.submsn_trans where pkg_name_title_txt=$1 and pgm_line_of_busns_id=$2
+    process_dcf_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-dcf-queue.fifo
+    process_icdt_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-icdt-queue.fifo
+    process_emdr_prepay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-prepay-queue.fifo
+    process_emdr_postpay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-postpay-queue.fifo
+    audit_queue_url: https://sqs.us-east-1.amazonaws.com/030556409702/esmd_audit_queue.fifo
+    success_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^SS_FLATFILE_REC_GEN_SUCCESS,audit_message^ZIP FILE HAS BEEN EXTRACTED SUCCESSFULLY AND SENT THE MESSAGE TO PROCESS QUEUE FOR FURTHER PROCESS
+    failure_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^ERROR_EXCEPTION_INTERNAL_SERVER_ERROR,audit_message^ERROR EXCEPTION:INTERNAL SERVER ERROR
+    dcf_rec_insert_tbl_name: esmd_data.submsn_trans
+    dcf_rec_insert_cols: submsn_trans_id^nextval('esmd_data.seq_submsn_trans_id')~formula,glbl_uniq_id^glbl_uniq_id,pkg_name_title_txt^pkg_name_title_txt,sendr_id ^88,sendr_type_id^6,pgm_line_of_busns_id^pgm_line_of_busns_id,submsn_type_id^1
+    dup_pcg_notification: DUPLICATE_CSV_FILE_FROM_PCG
+    notification_queue_url: https://sqs.us-east-1.amazonaws.com/030556409702/esmd_email_queue.fifo
+  val:
+    domain: preview.myapp.com
+  uat:
+    domain: preview.myapp.com
+  prod:
+    domain: preview.myapp.com
+
 # The `provider` block defines where your service will be deployed
 provider:
   name: aws
@@ -43,26 +72,24 @@ functions:
       - sqs: arn:aws:sqs:us-east-1:030556409702:esmd-process-outbound-files 
     environment:
       ENVIRONMENT_NAME: dev
-      SM_PGS_DB_AUTH: dev_esmd_db_secret
-      pgs_idle_time_out: 90000
-      pgs_conn_time_out: 5000
-      max_allowed_file_size: 1073741824  # 1 GB
-      ref_sql_to_get_new_guid: select esmd_data.generate_global_unique_id(nextval('esmd_data.seq_guid_id'))
-      ref_sql_to_get_guid: select glbl_uniq_id from esmd_data.submsn_trans where pkg_name_title_txt=$1 and pgm_line_of_busns_id=$2
-      ref_sql_for_file_dup_chk: select count(*) as trans_count from esmd_data.submsn_trans where pkg_name_title_txt=$1 and pgm_line_of_busns_id=$2
-      process_dcf_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-dcf-queue.fifo
-      process_icdt_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-icdt-queue.fifo
-      process_emdr_prepay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-prepay-queue.fifo
-      process_emdr_postpay_queue: https://sqs.us-east-1.amazonaws.com/030556409702/esmd-process-emdr-postpay-queue.fifo
-      audit_queue_url: https://sqs.us-east-1.amazonaws.com/030556409702/esmd_audit_queue.fifo
-      success_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^SS_FLATFILE_REC_GEN_SUCCESS,audit_message^ZIP FILE HAS BEEN EXTRACTED SUCCESSFULLY AND SENT THE MESSAGE TO PROCESS QUEUE FOR FURTHER PROCESS
-      failure_audit_event: transaction_id^transaction_id,request_type^lambda,worker_name^esMDOutboundFileValidations,date_timestamp^date_timestamp,hostname^null,activity_name^null,audit_message_id^ERROR_EXCEPTION_INTERNAL_SERVER_ERROR,audit_message^ERROR EXCEPTION:INTERNAL SERVER ERROR
-      dcf_rec_insert_tbl_name: esmd_data.submsn_trans
-      dcf_rec_insert_cols: submsn_trans_id^nextval('esmd_data.seq_submsn_trans_id')~formula,glbl_uniq_id^glbl_uniq_id,pkg_name_title_txt^pkg_name_title_txt,sendr_id ^88,sendr_type_id^6,pgm_line_of_busns_id^pgm_line_of_busns_id,submsn_type_id^1
-      dup_pcg_notification: DUPLICATE_CSV_FILE_FROM_PCG
-      notification_queue_url: https://sqs.us-east-1.amazonaws.com/030556409702/esmd_email_queue.fifo
-      MAX_ATTEMPTS: 1
-
+      SM_PGS_DB_AUTH: ${param:sm_pgs_db_auth}
+      PGS_IDLE_TIME_OUT: ${param:pgs_idle_time_out}
+      PGS_CONN_TIME_OUT: ${param:pgs_conn_time_out}
+      MAX_ALLOWED_FILE_SIZE: ${param:max_allowed_file_size}  # 1 GB
+      REF_SQL_TO_GET_NEW_GUID: ${param:ref_sql_to_get_new_guid}
+      REF_SQL_TO_GET_GUID: ${param:ref_sql_to_get_guid}
+      REF_SQL_FOR_FILE_DUP_CHK: ${param:ref_sql_for_file_dup_chk}
+      PROCESS_DCF_QUEUE: ${param:process_dcf_queue}
+      PROCESS_ICDT_QUEUE: ${param:process_icdt_queue}
+      PROCESS_EMDR_PREPAY_QUEUE: ${param:process_emdr_prepay_queue}
+      PROCESS_EMDR_POSTPAY_QUEUE: ${param:process_emdr_postpay_queue}
+      AUDIT_QUEUE_URL: ${param:audit_queue_url}
+      SUCCESS_AUDIT_EVENT: ${param:success_audit_event}
+      FAILURE_AUDIT_EVENT: ${param:failure_audit_event}
+      DCF_REC_INSERT_TBL_NAME: ${param:dcf_rec_insert_tbl_name}
+      DCF_REC_INSERT_COLS: ${param:dcf_rec_insert_cols}
+      DUP_PCG_NOTIFICATION: ${dup_pcg_notification}
+      NOTIFICATION_QUEUE_URL: ${param:notification_queue_url}
   
   # outboundFileInitialValidationsLambdaLogGroup:
   #   type: AWS::Logs::LogGroup
