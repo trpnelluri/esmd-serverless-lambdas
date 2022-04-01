@@ -84,8 +84,10 @@ class S3Service{
             console.log(`${EventName},${transID},copyObj,copyResponse:  ${JSON.stringify(copyResponse)}`);
             if (copyResponse) {
                 let files = new Object;
+                listOfFiles.guid = transID
                 listOfFiles.lob = lineOfBuss
-                listOfFiles.directory = LOBDirectory.slice(0, -1)
+                //listOfFiles.directory = LOBDirectory.slice(0, -1)
+                listOfFiles.directory = LOBDirectory
                 files.filename = fileName   //TBD to Add LOBDirectory
                 files.filetype = fileName.split('.').pop();
                 filesArray.push(files)

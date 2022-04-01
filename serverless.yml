@@ -5,7 +5,7 @@
 # uses to deploy your code to your provider of choice
 
 # The `service` block is the name of the service
-service: esmd-serverless-lambdas
+service: serverless-outbound-file-validations
 
 frameworkVersion: '3'
 
@@ -31,10 +31,13 @@ params:
     dcf_rec_insert_cols: submsn_trans_id^nextval('esmd_data.seq_submsn_trans_id')~formula,glbl_uniq_id^glbl_uniq_id,pkg_name_title_txt^pkg_name_title_txt,sendr_id ^88,sendr_type_id^6,pgm_line_of_busns_id^pgm_line_of_busns_id,submsn_type_id^1
     dup_pcg_notification: DUPLICATE_CSV_FILE_FROM_PCG
     notification_queue_url: https://sqs.us-east-1.amazonaws.com/030556409702/esmd_email_queue.fifo
+
   val:
     domain: preview.myapp.com
+
   uat:
     domain: preview.myapp.com
+    
   prod:
     domain: preview.myapp.com
 
@@ -52,8 +55,8 @@ provider:
 
 # The `functions` block defines what code to deploy
 functions:
-  esMDOutboundFileInitialValidations:
-    handler: outbound-file-initial-validations/index.handler
+  lambda:
+    handler: index.handler
     runtime: nodejs12.x
     vpc:
       securityGroupIds:
@@ -90,7 +93,7 @@ functions:
       DCF_REC_INSERT_COLS: ${param:dcf_rec_insert_cols}
       DUP_PCG_NOTIFICATION: ${dup_pcg_notification}
       NOTIFICATION_QUEUE_URL: ${param:notification_queue_url}
-  
+
   # outboundFileInitialValidationsLambdaLogGroup:
   #   type: AWS::Logs::LogGroup
   #   # DeletionPolicy: 90 # ${LOG_RETENTION_POLICY}

@@ -1,5 +1,5 @@
 {
-  "name": "esmd-serverless-lambdas",
+  "name": "serverless-outbound-initial-file-validations",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

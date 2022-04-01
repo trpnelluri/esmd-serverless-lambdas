@@ -51,14 +51,17 @@ class S3UnzipService {
                     console.log(`${EventName},${transID},fileUnzip,uploadParams Bucket: ${uploadParams.Bucket} Key: ${uploadParams.Key}`)
                     promises.push(s3.upload(uploadParams).promise());
     
-                    files.filename = fileName
+                    //files.filename = fileName
+                    files.filename = fileName.split('/').pop();
                     files.filetype = fileName.split('.').pop(); // Assumtion will be only one '.' in file name
                     filesArray.push(files)
                     num++;
                 } else {
                     if ( type === 'directory' ) {
+                        listOfFiles.guid = transID
                         listOfFiles.lob = lineOfBuss
-                        listOfFiles[type] = fileName.slice(0, -1)  // To remove '/' at the end
+                        //listOfFiles[type] = fileName.slice(0, -1)  // To remove '/' at the end
+                        listOfFiles[type] = LOBDirectory + fileName  // To remove '/' at the end
                     }
                     entry.autodrain();
                 }

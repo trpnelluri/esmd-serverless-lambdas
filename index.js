@@ -1,5 +1,5 @@
 'use strict';
-const PostgresPoolService = require('../sharedLib/db/postgre-pool-service');
+const PostgresPoolService = require('./sharedLib/db/postgre-pool-service');
 const LOBClassificationService = require('./lib/lob-classification');
 
 module.exports.handler = async function (event, context, callback) {
